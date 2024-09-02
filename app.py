@@ -12,20 +12,26 @@ import detection
 st.set_page_config(
     page_title="Coffee Leaf Classification and Disease Detection",
     page_icon="🤖",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="expanded"
 )
-tab = option_menu(None, ["DETECTION", "LEAF", "DISEASE", 'ABOUT US'], 
+
+tab = option_menu(None, ["DETECT", "LEAF", "DISEASE", 'TEAM'], 
     icons=['search', 'mouse', "virus", 'people'], 
-    menu_icon="cast", default_index=0, orientation="horizontal",
+    menu_icon="cast", 
+    default_index=0, 
+    orientation="horizontal",
     styles={
         "container": {"padding": "0!important", "background-color": "white"},
         "icon": {"color": "green", "font-size": "15px"}, 
-        "nav-link": {"font-size": "15px", "text-align": "center", "margin":"0px", "--hover-color": "#F7F9F2"},
+        "nav-link": {"font-size": "15px", 
+                     "text-align": "center", 
+                     "margin":"0px", "--hover-color": "#F7F9F2",
+                     "font-family": "'Arial', 'sans-serif'"},
         "nav-link-selected": {"color": "green", "background-color": "white"},
     })
 
-if tab == 'DETECTION':
+if tab == 'DETECT':
     detection.main()
 
 elif tab == 'LEAF':
