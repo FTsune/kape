@@ -13,13 +13,13 @@ def main():
     cleaf_colors = {
         0: (0, 255, 0),    # Green for 'arabica'
         1: (0, 255, 255),  # Yellow for 'liberica'
-        2: (255, 0, 0)     # Blue for 'robusta'
+        2: (0, 0, 255)     # Blue for 'robusta'
     }
 
     cdisease_colors = {
         0: (255, 165, 0),  # Orange for 'brown_eye_spot'
         1: (255, 0, 255),  # Magenta for 'leaf_miner'
-        2: (0, 0, 255),    # Red for 'leaf_rust'
+        2: (255, 0, 0),    # Red for 'leaf_rust'
         3: (128, 0, 128)   # Purple for 'red_spider_mite'
     }
 
@@ -35,35 +35,39 @@ def main():
 
 
     # Model Selection
-    detection_model_choice = st.sidebar.radio(
-        "Select Detection Model", ['Disease Detection', 'Leaf Detection', 'Both Models'])
+    with st.sidebar:
+        st.markdown("<p style='font-size: 14px;'>Select Detection Model</p>", unsafe_allow_html=True)
+        detection_model_choice = ui.tabs(
+                                    options=
+                                    ["Disease", "Leaf", "Both Models"],
+                                    default_value="Disease"
+                                )
 
     confidence = float(st.sidebar.slider("Select Model Confidence", 25, 100, 40)) / 100
 
     # New slider for overlap threshold
     overlap_threshold = float(st.sidebar.slider("Select Overlap Threshold", 0, 100, 30)) / 100
 
-    # Selecting Detection Model
-    if detection_model_choice == 'Disease Detection':
-        model_path = Path(settings.DISEASE_DETECTION_MODEL)
-        model = helper.load_model(model_path)
-    elif detection_model_choice == 'Leaf Detection':
-        model_path = Path(settings.LEAF_DETECTION_MODEL)
-        model = helper.load_model(model_path)
-    elif detection_model_choice == 'Both Models':
-        model_disease = helper.load_model(Path(settings.DISEASE_DETECTION_MODEL))
-        model_leaf = helper.load_model(Path(settings.LEAF_DETECTION_MODEL))
-
-    st.sidebar.divider()    
-    st.sidebar.header("TRY ME")
-
-    # Load Pre-trained ML Model
+    # Selecting Detection Model and setting model path
+    model = None
+    model_path = None
+    
     try:
-        if detection_model_choice != 'Both Models':
+        if detection_model_choice == 'Disease':
+            model_path = Path(settings.DISEASE_DETECTION_MODEL)
             model = helper.load_model(model_path)
+        elif detection_model_choice == 'Leaf':
+            model_path = Path(settings.LEAF_DETECTION_MODEL)
+            model = helper.load_model(model_path)
+        elif detection_model_choice == 'Both Models':
+            model_disease = helper.load_model(Path(settings.DISEASE_DETECTION_MODEL))
+            model_leaf = helper.load_model(Path(settings.LEAF_DETECTION_MODEL))
     except Exception as ex:
         st.error(f"Unable to load model. Check the specified path: {model_path}")
         st.error(ex)
+
+    st.sidebar.divider()    
+    st.sidebar.header("TRY ME")
 
     source_img = st.sidebar.file_uploader(
         "Choose an image...", type=("jpg", "jpeg", "png", 'bmp', 'webp'))
@@ -201,7 +205,7 @@ def main():
                     labels = res[0].names
 
                     # Choose the appropriate color map based on the model
-                    if detection_model_choice == 'Disease Detection':
+                    if detection_model_choice == 'Disease':
                         colors = cdisease_colors
                     else:
                         colors = cleaf_colors
