@@ -11,7 +11,7 @@ import detection
 # Setting page layout
 st.set_page_config(
     page_title="Coffee Leaf Classification and Disease Detection",
-    page_icon="🤖",
+    page_icon="🍃",
     layout="wide",
     initial_sidebar_state="expanded"
 )
