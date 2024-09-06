@@ -36,11 +36,12 @@ def main():
 
     # Model Selection
     with st.sidebar:
-        st.markdown("<p style='font-size: 14px;'>Select Detection Model</p>", unsafe_allow_html=True)
-        detection_model_choice = ui.tabs(
-                                    options=
-                                    ["Disease", "Leaf", "Both Models"],
-                                    default_value="Disease"
+        #st.markdown("<p style='font-size: 14px;'>Select Detection Model</p>", unsafe_allow_html=True)
+        detection_model_choice = st.selectbox(
+                                    "Select Detection Model",
+                                    ("Disease", "Leaf", "Both Models"),
+                                    index=0,
+                                    placeholder="Choose a model..."
                                 )
 
     confidence = float(st.sidebar.slider("Select Model Confidence", 25, 100, 40)) / 100
@@ -140,86 +141,87 @@ def main():
 
         return [boxes[i] for i in keep]
 
-    col1, col2 = st.columns(2)
+    with st.container(border=True):
+        col1, col2 = st.columns(2)
 
-    with col1:
-        try:
+        with col1:
+            try:
+                if source_img is None:
+                    default_image_path = str(settings.DEFAULT_IMAGE)
+                    default_image = PIL.Image.open(default_image_path)
+                    st.image(default_image_path, caption="Default Image",
+                            use_column_width=True)
+                else:
+                    uploaded_image = PIL.Image.open(source_img)
+                    st.image(source_img, caption="Uploaded Image",
+                            use_column_width=True)
+            except Exception as ex:
+                st.error("Error occurred while opening the image.")
+                st.error(ex)
+
+        with col2:
             if source_img is None:
-                default_image_path = str(settings.DEFAULT_IMAGE)
-                default_image = PIL.Image.open(default_image_path)
-                st.image(default_image_path, caption="Default Image",
+                default_detected_image_path = str(settings.DEFAULT_DETECT_IMAGE)
+                default_detected_image = PIL.Image.open(default_detected_image_path)
+                st.image(default_detected_image_path, caption='Detected Image',
                         use_column_width=True)
             else:
-                uploaded_image = PIL.Image.open(source_img)
-                st.image(source_img, caption="Uploaded Image",
-                        use_column_width=True)
-        except Exception as ex:
-            st.error("Error occurred while opening the image.")
-            st.error(ex)
+                if st.sidebar.button('Detect Objects'):
+                    if detection_model_choice == 'Both Models':
+                        # Use both models for detection
+                        res_disease = model_disease.predict(uploaded_image, conf=confidence)
+                        res_leaf = model_leaf.predict(uploaded_image, conf=confidence)
 
-    with col2:
-        if source_img is None:
-            default_detected_image_path = str(settings.DEFAULT_DETECT_IMAGE)
-            default_detected_image = PIL.Image.open(default_detected_image_path)
-            st.image(default_detected_image_path, caption='Detected Image',
-                    use_column_width=True)
-        else:
-            if st.sidebar.button('Detect Objects'):
-                if detection_model_choice == 'Both Models':
-                    # Use both models for detection
-                    res_disease = model_disease.predict(uploaded_image, conf=confidence)
-                    res_leaf = model_leaf.predict(uploaded_image, conf=confidence)
+                        # Apply non-max suppression
+                        disease_boxes = non_max_suppression(res_disease[0].boxes, overlap_threshold)
+                        leaf_boxes = non_max_suppression(res_leaf[0].boxes, overlap_threshold)
 
-                    # Apply non-max suppression
-                    disease_boxes = non_max_suppression(res_disease[0].boxes, overlap_threshold)
-                    leaf_boxes = non_max_suppression(res_leaf[0].boxes, overlap_threshold)
+                        # Merge the labels by converting them to dictionaries and concatenating
+                        combined_labels = {**res_disease[0].names, **res_leaf[0].names}
 
-                    # Merge the labels by converting them to dictionaries and concatenating
-                    combined_labels = {**res_disease[0].names, **res_leaf[0].names}
+                        # Create a combined image with both model detections
+                        res_combined = np.array(uploaded_image)
 
-                    # Create a combined image with both model detections
-                    res_combined = np.array(uploaded_image)
+                        # Draw disease boxes
+                        res_combined = draw_bounding_boxes(res_combined, disease_boxes, res_disease[0].names, cdisease_colors)
 
-                    # Draw disease boxes
-                    res_combined = draw_bounding_boxes(res_combined, disease_boxes, res_disease[0].names, cdisease_colors)
+                        # Draw leaf boxes
+                        res_combined = draw_bounding_boxes(res_combined, leaf_boxes, res_leaf[0].names, cleaf_colors)
 
-                    # Draw leaf boxes
-                    res_combined = draw_bounding_boxes(res_combined, leaf_boxes, res_leaf[0].names, cleaf_colors)
+                        st.image(res_combined, caption='Combined Detected Image', use_column_width=True)
 
-                    st.image(res_combined, caption='Combined Detected Image', use_column_width=True)
+                        with st.popover("Combined Detection Results"):
+                            # Iterate over each box separately
+                            st.write("Disease Detection Results:")
+                            for box in disease_boxes:
+                                st.write(box)
 
-                    with st.expander("Combined Detection Results"):
-                        # Iterate over each box separately
-                        st.write("Disease Detection Results:")
-                        for box in disease_boxes:
-                            st.write(box)
+                            st.write("Leaf Detection Results:")
+                            for box in leaf_boxes:
+                                st.write(box)
 
-                        st.write("Leaf Detection Results:")
-                        for box in leaf_boxes:
-                            st.write(box)
-
-                else:
-                    # Single model prediction
-                    res = model.predict(uploaded_image, conf=confidence)
-                    boxes = non_max_suppression(res[0].boxes, overlap_threshold)
-                    labels = res[0].names
-
-                    # Choose the appropriate color map based on the model
-                    if detection_model_choice == 'Disease':
-                        colors = cdisease_colors
                     else:
-                        colors = cleaf_colors
+                        # Single model prediction
+                        res = model.predict(uploaded_image, conf=confidence)
+                        boxes = non_max_suppression(res[0].boxes, overlap_threshold)
+                        labels = res[0].names
 
-                    # Draw the bounding boxes
-                    res_plotted = draw_bounding_boxes(uploaded_image, boxes, labels, colors)
-                    
-                    st.image(res_plotted, caption='Detected Image', use_column_width=True)
-                    try:
-                        with st.expander("Detection Results"):
-                            for box in boxes:
-                                st.write(box.data)
-                    except Exception as ex:
-                        st.write("No image is uploaded yet!")
+                        # Choose the appropriate color map based on the model
+                        if detection_model_choice == 'Disease':
+                            colors = cdisease_colors
+                        else:
+                            colors = cleaf_colors
+
+                        # Draw the bounding boxes
+                        res_plotted = draw_bounding_boxes(uploaded_image, boxes, labels, colors)
+                        
+                        st.image(res_plotted, caption='Detected Image', use_column_width=True)
+                        try:
+                            with st.popover("Detection Results"):
+                                for box in boxes:
+                                    st.write(box.data)
+                        except Exception as ex:
+                            st.write("No image is uploaded yet!")
 
 
 if __name__ == '__main__':

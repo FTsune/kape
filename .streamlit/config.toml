@@ -1,6 +1,11 @@
+[server]
+enableStaticServing = true
+
 [theme]
-primaryColor = "green"
-secondaryBackgroundColor = "#F7F9F2"
+primaryColor = "#00fecd"
+backgroundColor = "#111827"
+textColor = "white"
+secondaryBackgroundColor = "#141b2a"
 
 [client]
 toolbarMode = "minimal"
