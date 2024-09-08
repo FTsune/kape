@@ -4,7 +4,9 @@ from pathlib import Path
 import PIL
 import cv2
 import numpy as np
-
+import pandas as pd
+import altair as alt
+import time
 import settings
 import helper
 
@@ -22,13 +24,9 @@ def main():
         2: (255, 0, 0),    # Red for 'leaf_rust'
         3: (128, 0, 128)   # Purple for 'red_spider_mite'
     }
-
-    # Logo
-    st.logo('images/icon.png')
     
     # Main page heading
-    st.markdown("<h1 style='font-size: 35px;'>COFFEE LEAF CLASSIFICATION AND DISEASE DETECTION</h1>", unsafe_allow_html=True)
-
+    st.markdown("<p style='font-size: 35px; font-weight: bold; text-align: center;'>COFFEE LEAF CLASSIFICATION AND DISEASE DETECTION</p>", unsafe_allow_html=True)
 
     # Sidebar
     st.sidebar.header("DL MODEL CONFIGURATION")
@@ -44,10 +42,13 @@ def main():
                                     placeholder="Choose a model..."
                                 )
 
-    confidence = float(st.sidebar.slider("Select Model Confidence", 25, 100, 40)) / 100
+    confidence = float(st.sidebar.slider("Select Model Confidence", 
+                                         25, 100, 40,
+                                         help="A higher value means the model will only make predictions when it is more certain, which can reduce false positives but might also increase the number of 'unsure' results.")) / 100
 
     # New slider for overlap threshold
-    overlap_threshold = float(st.sidebar.slider("Select Overlap Threshold", 0, 100, 30)) / 100
+    overlap_threshold = float(st.sidebar.slider("Select Overlap Threshold", 0, 100, 30,
+                                                help="A higher threshold means the model will require more overlap between detected regions to consider them as distinct, which can help reduce false positives but may also miss some overlapping objects.")) / 100
 
     # Selecting Detection Model and setting model path
     model = None
@@ -145,83 +146,171 @@ def main():
         col1, col2 = st.columns(2)
 
         with col1:
-            try:
-                if source_img is None:
-                    default_image_path = str(settings.DEFAULT_IMAGE)
-                    default_image = PIL.Image.open(default_image_path)
-                    st.image(default_image_path, caption="Default Image",
-                            use_column_width=True)
-                else:
-                    uploaded_image = PIL.Image.open(source_img)
-                    st.image(source_img, caption="Uploaded Image",
-                            use_column_width=True)
-            except Exception as ex:
-                st.error("Error occurred while opening the image.")
-                st.error(ex)
+            with st.container(border=True):
+                try:
+                    if source_img is None:
+                        default_image_path = str(settings.DEFAULT_DETECT_IMAGE)
+                        default_image = PIL.Image.open(default_image_path)
+                        st.image(default_image_path, caption="Sample Image",
+                                use_column_width=True)
+                    else:
+                        uploaded_image = PIL.Image.open(source_img)
+                        st.image(source_img, caption="Uploaded Image",
+                                use_column_width=True)
+                except Exception as ex:
+                    st.error("Error occurred while opening the image.")
+                    st.error(ex)
 
         with col2:
+            def create_circular_progress_chart(metric_name, value):
+                # Create a DataFrame for the metric
+                data = pd.DataFrame({
+                    'metric': [metric_name],
+                    'value': [value]  # Metric value in percentage
+                })
+
+                # Create a chart with an arc mark to represent the progress
+                arc = alt.Chart(data).mark_arc(innerRadius=30, outerRadius=35).encode(
+                    theta=alt.Theta(field='value', type='quantitative', stack=True, scale=alt.Scale(domain=[0, 100])),
+                    color=alt.value('#00fecd')
+                )
+
+                # Create a chart with an arc mark to represent the background
+                background = alt.Chart(data).mark_arc(innerRadius=30, outerRadius=35, color='#e0e0e0').encode(
+                    theta=alt.Theta(field='value', type='quantitative', stack=True, scale=alt.Scale(domain=[0, 100]))
+                ).transform_calculate(
+                    value='100'
+                )
+
+                # Create the text in the center
+                text = alt.Chart(data).mark_text(
+                    align='center',
+                    baseline='middle',
+                    size=20,
+                    font='Arial',
+                    color='#00fecd'
+                ).encode(
+                    text=alt.Text('value:Q')
+                )
+
+                # Combine the background, arc, and text
+                final_chart = alt.layer(background, arc, text).properties(
+                    width=200,
+                    height=100
+                )
+
+                return final_chart
+
+            # Metrics
+            metrics = [
+                {'name': 'mAP', 'value': 98},
+                {'name': 'Precision', 'value': 98},
+                {'name': 'Recall', 'value': 96}
+            ]
+
+            with st.container(border=True):
+                st.markdown("<p style='font-weight: bold; font-size: 17px; color: #00fecd'>Instructions</p>", unsafe_allow_html=True)
+                st.markdown("""
+                    <p style='margin-top: -12px'>
+                        Open sidebar to start configuring.
+                        Upload a valid image file (jpeg, jpg, webp, png) and click "Detect Objects".
+                        Wait for a few seconds until it's done detecting objects.
+                    </p>
+                """, unsafe_allow_html=True)
+            
+            # Create charts for each metric
+            charts = [create_circular_progress_chart(metric['name'], metric['value']) for metric in metrics]
+
+            st.markdown("<p style='font-size: 15px; margin-top: 10px; font-weight: bold; text-align: center;'>MODEL'S METRICS</p>", unsafe_allow_html=True)
+
+            # Display charts side by side in Streamlit
+            cols = st.columns(3)
+            for col, chart, metric in zip(cols, charts, metrics):
+                with col:
+                    st.altair_chart(chart, use_container_width=True)
+                    st.markdown(f"<p style='text-align: center; color: #00fecd; margin-top: -40px;'>{metric['name']}</p>", unsafe_allow_html=True)
+                     
             if source_img is None:
-                default_detected_image_path = str(settings.DEFAULT_DETECT_IMAGE)
-                default_detected_image = PIL.Image.open(default_detected_image_path)
-                st.image(default_detected_image_path, caption='Detected Image',
-                        use_column_width=True)
+                pass
             else:
                 if st.sidebar.button('Detect Objects'):
-                    if detection_model_choice == 'Both Models':
-                        # Use both models for detection
-                        res_disease = model_disease.predict(uploaded_image, conf=confidence)
-                        res_leaf = model_leaf.predict(uploaded_image, conf=confidence)
+                    with st.spinner("Detecting objects. Please wait..."):
+                        time.sleep(2)
 
-                        # Apply non-max suppression
-                        disease_boxes = non_max_suppression(res_disease[0].boxes, overlap_threshold)
-                        leaf_boxes = non_max_suppression(res_leaf[0].boxes, overlap_threshold)
+                        start_time = time.time()
+                        if detection_model_choice == 'Both Models':
+                            @st.experimental_dialog("Results")
+                            def both_models():
+                                # Use both models for detection
+                                res_disease = model_disease.predict(uploaded_image, conf=confidence)
+                                res_leaf = model_leaf.predict(uploaded_image, conf=confidence)
 
-                        # Merge the labels by converting them to dictionaries and concatenating
-                        combined_labels = {**res_disease[0].names, **res_leaf[0].names}
+                                # Apply non-max suppression
+                                disease_boxes = non_max_suppression(res_disease[0].boxes, overlap_threshold)
+                                leaf_boxes = non_max_suppression(res_leaf[0].boxes, overlap_threshold)
 
-                        # Create a combined image with both model detections
-                        res_combined = np.array(uploaded_image)
+                                # Merge the labels by converting them to dictionaries and concatenating
+                                combined_labels = {**res_disease[0].names, **res_leaf[0].names}
 
-                        # Draw disease boxes
-                        res_combined = draw_bounding_boxes(res_combined, disease_boxes, res_disease[0].names, cdisease_colors)
+                                # Create a combined image with both model detections
+                                res_combined = np.array(uploaded_image)
 
-                        # Draw leaf boxes
-                        res_combined = draw_bounding_boxes(res_combined, leaf_boxes, res_leaf[0].names, cleaf_colors)
+                                # Draw disease boxes
+                                res_combined = draw_bounding_boxes(res_combined, disease_boxes, res_disease[0].names, cdisease_colors)
 
-                        st.image(res_combined, caption='Combined Detected Image', use_column_width=True)
+                                # Draw leaf boxes
+                                res_combined = draw_bounding_boxes(res_combined, leaf_boxes, res_leaf[0].names, cleaf_colors)
+                                
+                                with st.container(border=True):
+                                    st.image(res_combined, caption='Combined Detected Image', use_column_width=True)
 
-                        with st.popover("Combined Detection Results"):
-                            # Iterate over each box separately
-                            st.write("Disease Detection Results:")
-                            for box in disease_boxes:
-                                st.write(box)
+                                end_time = time.time()
+                                elapsed_time = end_time - start_time
+                                st.success(f"Prediction finished within {elapsed_time:.2f}s!")
+                                
+                                with st.popover("Combined Detection Results"):
+                                    # Iterate over each box separately
+                                    st.write("Disease Detection Results:")
+                                    for box in disease_boxes:
+                                        st.write(box)
 
-                            st.write("Leaf Detection Results:")
-                            for box in leaf_boxes:
-                                st.write(box)
+                                    st.write("Leaf Detection Results:")
+                                    for box in leaf_boxes:
+                                        st.write(box)
+                            both_models()
 
-                    else:
-                        # Single model prediction
-                        res = model.predict(uploaded_image, conf=confidence)
-                        boxes = non_max_suppression(res[0].boxes, overlap_threshold)
-                        labels = res[0].names
-
-                        # Choose the appropriate color map based on the model
-                        if detection_model_choice == 'Disease':
-                            colors = cdisease_colors
                         else:
-                            colors = cleaf_colors
+                            @st.experimental_dialog("Result")
+                            def single_model():
+                                # Single model prediction
+                                res = model.predict(uploaded_image, conf=confidence)
+                                boxes = non_max_suppression(res[0].boxes, overlap_threshold)
+                                labels = res[0].names
 
-                        # Draw the bounding boxes
-                        res_plotted = draw_bounding_boxes(uploaded_image, boxes, labels, colors)
-                        
-                        st.image(res_plotted, caption='Detected Image', use_column_width=True)
-                        try:
-                            with st.popover("Detection Results"):
-                                for box in boxes:
-                                    st.write(box.data)
-                        except Exception as ex:
-                            st.write("No image is uploaded yet!")
+                                # Choose the appropriate color map based on the model
+                                if detection_model_choice == 'Disease':
+                                    colors = cdisease_colors
+                                else:
+                                    colors = cleaf_colors
+
+                                # Draw the bounding boxes
+                                res_plotted = draw_bounding_boxes(uploaded_image, boxes, labels, colors)
+                                
+                                with st.container(border=True):
+                                    st.image(res_plotted, caption='Detected Image', use_column_width=True)
+
+                                end_time = time.time()
+                                elapsed_time = end_time - start_time
+                                st.success(f"Prediction finished within {elapsed_time:.2f}s!")
+
+                                try:
+                                    with st.popover("Detection Results"):
+                                        for box in boxes:
+                                            st.write(box.data)
+                                except Exception as ex:
+                                    st.write("No image is uploaded yet!")
+                            
+                            single_model()
 
 
 if __name__ == '__main__':

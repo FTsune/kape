@@ -2,6 +2,7 @@
 import streamlit as st
 import streamlit_shadcn_ui as ui
 from streamlit_option_menu import option_menu
+import hydralit_components as hc
 
 # Additional Page
 import leaf
@@ -14,8 +15,32 @@ st.set_page_config(
     page_title="Coffee Leaf Classification and Disease Detection",
     page_icon="🍃",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
+
+# menu_data = [
+#     {'icon': 'bi bi-house', 'label': "Home"},
+#     {'icon': "bi bi-mouse", 'label': "Leaf"},
+#     {'icon': "bi bi-radioactive", 'label': "Disease"},
+#     {'icon': "bi bi-people", 'label': "Team"},
+# ]
+
+# # Define the theme customization
+# over_theme = {
+#     'txc_inactive': 'white',  # Inactive text color
+#     'menu_background': '000000',  # Background color for the navbar
+#     'txc_active': '#00fecd',  # Active text color
+#     'menu_border': 'white',
+# }
+
+# # Create the navbar
+# menu_id = hc.nav_bar(
+#     menu_definition=menu_data,
+#     override_theme=over_theme,
+#     hide_streamlit_markers=True,  # will show the st hamburger as well as the navbar now!
+#     sticky_nav=True,  # at the top or not
+#     sticky_mode='not-jumpy',  # jumpy or not-jumpy, but sticky or pinned
+# )
 
 tab = option_menu(None, ["HOME", "LEAF", "DISEASE", 'TEAM'], 
     icons=['house', 'mouse', "virus", 'people'], 
@@ -33,7 +58,7 @@ tab = option_menu(None, ["HOME", "LEAF", "DISEASE", 'TEAM'],
                               "font-weight": "normal", 
                               "background-color": "#111827", 
                               "border": "2px solid #00fecd", 
-                              "border-radius": "25px"}
+                              "border-radius": "0px"}
     })
 
 if tab == 'HOME':
