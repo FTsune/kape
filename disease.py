@@ -1,10 +1,6 @@
 import streamlit as st
 import base64
-from st_clickable_images import clickable_images
-from PIL import Image
-
 from st_click_detector import click_detector
-import io
 
 def image_to_base64(image_path):
     with open(image_path, "rb") as image:
@@ -39,7 +35,7 @@ def main():
             margin: 5px;
             overflow: hidden;
             width: 100%;
-            max-width: 600px;
+            max-width: 500px;
             aspect-ratio: 21 / 5;
         }}
         .image-item {{
@@ -58,7 +54,7 @@ def main():
             left: 50%;
             transform: translate(-50%, -50%);
             color: white;
-            font-size: 20px;
+            font-size: 25px;
             font-weight: bold;
             font-family: Arial, sans-serif;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
@@ -92,7 +88,7 @@ def main():
         st.markdown(desc)
 
     if clicked == "Image 1":
-        name = 'Cercospora'
+        name = titles[0]
         img = 'images/diseases/cercospora.jpg'
         name2 = 'Cercospora coffeicola'
         desc = '''
@@ -103,7 +99,7 @@ def main():
         info(name, name2, desc, img)
 
     elif clicked == "Image 2":
-        name = 'Leaf Miner'
+        name = titles[1]
         name2 = 'Leucoptera caffeina'
         img = 'images/diseases/leaf-miner.jpg'
         desc = '''
@@ -114,7 +110,7 @@ def main():
         info(name, name2, desc, img)
     
     elif clicked == "Image 3":
-        name = 'Leaf Rust'
+        name = titles[2]
         name2 = 'Hemileia vastatrix'
         img = 'images/diseases/leaf-rust.jpg'
         desc = '''
@@ -127,14 +123,14 @@ def main():
         info(name, name2, desc, img)
 
     elif clicked == "Image 4":
-        name = 'Lichens'
+        name = titles[3]
         name2 = 'A coffee disease...'
         img = 'images/diseases/lichens.jpg'
         desc = 'Leaf disease description... :bug:'
         info(name, name2, desc, img)
 
     elif clicked == "Image 5":
-        name = 'Sooty Mold'
+        name = titles[4]
         name2 = 'Capnodium citri'
         img = 'images/diseases/sooty-mold.jpg'
         desc = '''
