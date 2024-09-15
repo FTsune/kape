@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit_shadcn_ui as ui
 from pathlib import Path
 import PIL
 import cv2
@@ -24,9 +23,6 @@ def main():
         2: (255, 0, 0),    # Red for 'leaf_rust'
         3: (128, 0, 128)   # Purple for 'red_spider_mite'
     }
-    
-    # Main page heading
-    st.markdown("<p style='font-size: 35px; font-weight: bold; text-align: center;'>COFFEE LEAF CLASSIFICATION AND DISEASE DETECTION</p>", unsafe_allow_html=True)
 
     # Sidebar
     st.sidebar.header("DL MODEL CONFIGURATION")
@@ -41,14 +37,16 @@ def main():
                                     index=0,
                                     placeholder="Choose a model..."
                                 )
+        adv_opt = st.toggle("Advanced Options")
 
-    confidence = float(st.sidebar.slider("Select Model Confidence", 
-                                         25, 100, 40,
-                                         help="A higher value means the model will only make predictions when it is more certain, which can reduce false positives but might also increase the number of 'unsure' results.")) / 100
+        if adv_opt:
+            confidence = float(st.sidebar.slider("Select Model Confidence", 
+                                                25, 100, 40,
+                                                help="A higher value means the model will only make predictions when it is more certain, which can reduce false positives but might also increase the number of 'unsure' results.")) / 100
 
-    # New slider for overlap threshold
-    overlap_threshold = float(st.sidebar.slider("Select Overlap Threshold", 0, 100, 30,
-                                                help="A higher threshold means the model will require more overlap between detected regions to consider them as distinct, which can help reduce false positives but may also miss some overlapping objects.")) / 100
+            # New slider for overlap threshold
+            overlap_threshold = float(st.sidebar.slider("Select Overlap Threshold", 0, 100, 30,
+                                                        help="A higher threshold means the model will require more overlap between detected regions to consider them as distinct, which can help reduce false positives but may also miss some overlapping objects.")) / 100
 
     # Selecting Detection Model and setting model path
     model = None
@@ -151,7 +149,7 @@ def main():
                     if source_img is None:
                         default_image_path = str(settings.DEFAULT_DETECT_IMAGE)
                         default_image = PIL.Image.open(default_image_path)
-                        st.image(default_image_path, caption="Sample Image",
+                        st.image(default_image_path, caption="Sample Image: Objects Detected",
                                 use_column_width=True)
                     else:
                         uploaded_image = PIL.Image.open(source_img)
@@ -176,7 +174,7 @@ def main():
                 )
 
                 # Create a chart with an arc mark to represent the background
-                background = alt.Chart(data).mark_arc(innerRadius=30, outerRadius=35, color='#e0e0e0').encode(
+                background = alt.Chart(data).mark_arc(innerRadius=30, outerRadius=35, color='000000').encode(
                     theta=alt.Theta(field='value', type='quantitative', stack=True, scale=alt.Scale(domain=[0, 100]))
                 ).transform_calculate(
                     value='100'
@@ -217,11 +215,15 @@ def main():
                         Wait for a few seconds until it's done detecting objects.
                     </p>
                 """, unsafe_allow_html=True)
+                st.warning("Our model is currently optimized to detect diseases only in coffee leaves.")
             
             # Create charts for each metric
             charts = [create_circular_progress_chart(metric['name'], metric['value']) for metric in metrics]
 
-            st.markdown("<p style='font-size: 15px; margin-top: 10px; font-weight: bold; text-align: center;'>MODEL'S METRICS</p>", unsafe_allow_html=True)
+            st.markdown("""<p style='font-size: 15px; margin-top: 10px; font-weight: bold; text-align: center;'>
+                        MODEL'S PERFORMANCE METRICS
+                        </p>""",
+                        unsafe_allow_html=True)
 
             # Display charts side by side in Streamlit
             cols = st.columns(3)
@@ -234,20 +236,29 @@ def main():
                 pass
             else:
                 if st.sidebar.button('Detect Objects'):
-                    with st.spinner("Detecting objects. Please wait..."):
-                        time.sleep(2)
+                    if detection_model_choice == 'Both Models':
+                        @st.experimental_dialog("Results")
+                        def both_models():
+                            with st.spinner("Detecting objects. Please wait..."):
+                                time.sleep(0)
 
-                        start_time = time.time()
-                        if detection_model_choice == 'Both Models':
-                            @st.experimental_dialog("Results")
-                            def both_models():
-                                # Use both models for detection
-                                res_disease = model_disease.predict(uploaded_image, conf=confidence)
-                                res_leaf = model_leaf.predict(uploaded_image, conf=confidence)
+                                start_time = time.time()
+                            # Use both models for detection
+                                if adv_opt:
+                                    res_disease = model_disease.predict(uploaded_image, conf=confidence)
+                                    res_leaf = model_leaf.predict(uploaded_image, conf=confidence)
 
-                                # Apply non-max suppression
-                                disease_boxes = non_max_suppression(res_disease[0].boxes, overlap_threshold)
-                                leaf_boxes = non_max_suppression(res_leaf[0].boxes, overlap_threshold)
+                                    # Apply non-max suppression
+                                    disease_boxes = non_max_suppression(res_disease[0].boxes, overlap_threshold)
+                                    leaf_boxes = non_max_suppression(res_leaf[0].boxes, overlap_threshold)
+
+                                else:
+                                    res_disease = model_disease.predict(uploaded_image, conf=.4)
+                                    res_leaf = model_leaf.predict(uploaded_image, conf=.4)
+
+                                    # Apply non-max suppression
+                                    disease_boxes = non_max_suppression(res_disease[0].boxes, .3)
+                                    leaf_boxes = non_max_suppression(res_leaf[0].boxes, .3)
 
                                 # Merge the labels by converting them to dictionaries and concatenating
                                 combined_labels = {**res_disease[0].names, **res_leaf[0].names}
@@ -260,14 +271,14 @@ def main():
 
                                 # Draw leaf boxes
                                 res_combined = draw_bounding_boxes(res_combined, leaf_boxes, res_leaf[0].names, cleaf_colors)
-                                
+                                    
                                 with st.container(border=True):
                                     st.image(res_combined, caption='Combined Detected Image', use_column_width=True)
 
                                 end_time = time.time()
                                 elapsed_time = end_time - start_time
                                 st.success(f"Prediction finished within {elapsed_time:.2f}s!")
-                                
+                                    
                                 with st.popover("Combined Detection Results"):
                                     # Iterate over each box separately
                                     st.write("Disease Detection Results:")
@@ -277,14 +288,23 @@ def main():
                                     st.write("Leaf Detection Results:")
                                     for box in leaf_boxes:
                                         st.write(box)
-                            both_models()
+                        both_models()
 
-                        else:
-                            @st.experimental_dialog("Result")
-                            def single_model():
+                    else:
+                        @st.experimental_dialog("Result")
+                        def single_model():
+                            with st.spinner("Detecting objects. Please wait..."):
+                                time.sleep(0)
+
+                                start_time = time.time()
                                 # Single model prediction
-                                res = model.predict(uploaded_image, conf=confidence)
-                                boxes = non_max_suppression(res[0].boxes, overlap_threshold)
+                                if adv_opt:
+                                    res = model.predict(uploaded_image, conf=confidence)
+                                    boxes = non_max_suppression(res[0].boxes, overlap_threshold)
+                                    
+                                else:
+                                    res = model.predict(uploaded_image, conf=.4)
+                                    boxes = non_max_suppression(res[0].boxes, .3)                                    
                                 labels = res[0].names
 
                                 # Choose the appropriate color map based on the model
@@ -295,7 +315,7 @@ def main():
 
                                 # Draw the bounding boxes
                                 res_plotted = draw_bounding_boxes(uploaded_image, boxes, labels, colors)
-                                
+                                    
                                 with st.container(border=True):
                                     st.image(res_plotted, caption='Detected Image', use_column_width=True)
 
@@ -310,8 +330,7 @@ def main():
                                 except Exception as ex:
                                     st.write("No image is uploaded yet!")
                             
-                            single_model()
-
+                        single_model()
 
 if __name__ == '__main__':
     main()

@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit_shadcn_ui as ui
 from streamlit_extras.stylable_container import stylable_container
 
 def main(): 

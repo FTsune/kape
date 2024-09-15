@@ -42,13 +42,44 @@ st.set_page_config(
 #     sticky_mode='not-jumpy',  # jumpy or not-jumpy, but sticky or pinned
 # )
 
+st.markdown(
+    """
+    <style>
+    [data-testid="stHeader"] {
+        display: none;
+    }
+    [data-testid="stToolbar"] {
+        display: none;
+    }
+    .main .block-container {
+        padding-top: 0 !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Adjust the container styling to move the option menu to the top
+st.markdown(
+    """
+    <style>
+    .menu-container {
+        margin-top: 0 !important;
+        padding-top: 20px !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
 tab = option_menu(None, ["HOME", "LEAF", "DISEASE", 'TEAM'], 
     icons=['house', 'mouse', "virus", 'people'], 
     menu_icon="cast", 
     default_index=0, 
     orientation="horizontal",
     styles={
-        "container": {"padding": "0!important", "background-color": "#111827"},
+        "container": {"padding": "0!important",  "background-color": "#111827"},
         "icon": {"color": "#00fecd", "font-size": "15px"}, 
         "nav-link": {"font-size": "14px", 
                      "text-align": "center", 

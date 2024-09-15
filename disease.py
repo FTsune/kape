@@ -2,37 +2,86 @@ import streamlit as st
 import base64
 from st_clickable_images import clickable_images
 from PIL import Image
+
+from st_click_detector import click_detector
 import io
 
-def preprocess_image(image_path, size=(250, 250)):
-    image = Image.open(image_path)
-    image = image.resize((size[0], size[1]), Image.LANCZOS)
-    return image
-
-def image_to_base64(image):
-    buffer = io.BytesIO()
-    image.save(buffer, format="JPEG")
-    encoded = base64.b64encode(buffer.getvalue()).decode()
-    return f"data:image/jpeg;base64,{encoded}"
+def image_to_base64(image_path):
+    with open(image_path, "rb") as image:
+        encoded = base64.b64encode(image.read()).decode()
+        return f"data:image/jpeg;base64,{encoded}"
 
 def main():
     st.markdown("<p style='color: white; font-size: 35px; font-weight: bold; text-align: center;'>COFFEE LEAF DISEASES</p>", unsafe_allow_html=True)
     st.markdown("<p style='margin-top: -40px'><hr></p>", unsafe_allow_html=True)
     
-    image_paths = ["images/diseases/cercospora.jpg", 
+    image_paths = ["images/diseases/cercospora2.jpg", 
                    "images/diseases/leaf-miner.jpg", 
                    "images/diseases/leaf-rust.jpg", 
                    "images/diseases/lichens.jpg", 
                    "images/diseases/sooty-mold.jpg"]
     
-    images = [image_to_base64(preprocess_image(image_path)) for image_path in image_paths]
+    images = [image_to_base64(image_path) for image_path in image_paths]
 
-    clicked = clickable_images(
-            images,
-            titles=['Cercospora', 'Leaf Miner', 'Leaf Rust', 'Lichens', 'Sooty Mold'],
-            div_style={"display": "flex", "justify-content": "center", "flex-wrap": "wrap"},
-            img_style={"border-radius": "10px", "padding": "2px","margin": "5px", "height": "250px", "width": "250px"},
-        )
+    titles = ['Cercospora', 'Leaf Miner', 'Leaf Rust', 'Lichens', 'Sooty Mold']
+    
+    content = f"""
+        <style>
+        .image-grid {{
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }}
+        .image-container {{
+            position: relative;
+            border-radius: 20px;
+            margin: 5px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 21 / 5;
+        }}
+        .image-item {{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(60%);
+            transition: transform 0.2s;
+        }}
+        .image-item:hover {{
+            transform: scale(1.05);
+        }}
+        .image-title {{
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            width: 100%;
+        }}
+        @media (max-width: 800px) {{
+            .image-container {{
+                max-width: 100%;
+            }}
+        }}
+        </style>
+        <div class="image-grid">
+            <div class="image-container"><a href='#' id='Image 1'><img class='image-item' src='{images[0]}'><div class='image-title'>{titles[0]}</div></a></div>
+            <div class="image-container"><a href='#' id='Image 2'><img class='image-item' src='{images[1]}'><div class='image-title'>{titles[1]}</div></a></div>
+            <div class="image-container"><a href='#' id='Image 3'><img class='image-item' src='{images[2]}'><div class='image-title'>{titles[2]}</div></a></div>
+            <div class="image-container"><a href='#' id='Image 4'><img class='image-item' src='{images[3]}'><div class='image-title'>{titles[3]}</div></a></div>
+            <div class="image-container"><a href='#' id='Image 5'><img class='image-item' src='{images[4]}'><div class='image-title'>{titles[4]}</div></a></div>
+        </div>
+    """
+
+
+    clicked = click_detector(content)
 
     @st.experimental_dialog('DISEASE INFO')
     def info(name, name2, desc, image):
@@ -42,7 +91,7 @@ def main():
         st.markdown(f"<p style='color: gray; margin-top: -15px; font-weight: italic;'><em>{name2}</em></p>", unsafe_allow_html=True)
         st.markdown(desc)
 
-    if clicked == 0:
+    if clicked == "Image 1":
         name = 'Cercospora'
         img = 'images/diseases/cercospora.jpg'
         name2 = 'Cercospora coffeicola'
@@ -53,7 +102,7 @@ def main():
         '''
         info(name, name2, desc, img)
 
-    elif clicked == 1:
+    elif clicked == "Image 2":
         name = 'Leaf Miner'
         name2 = 'Leucoptera caffeina'
         img = 'images/diseases/leaf-miner.jpg'
@@ -64,7 +113,7 @@ def main():
         '''
         info(name, name2, desc, img)
     
-    elif clicked == 2:
+    elif clicked == "Image 3":
         name = 'Leaf Rust'
         name2 = 'Hemileia vastatrix'
         img = 'images/diseases/leaf-rust.jpg'
@@ -77,14 +126,14 @@ def main():
         '''
         info(name, name2, desc, img)
 
-    elif clicked == 3:
+    elif clicked == "Image 4":
         name = 'Lichens'
         name2 = 'A coffee disease...'
         img = 'images/diseases/lichens.jpg'
         desc = 'Leaf disease description... :bug:'
         info(name, name2, desc, img)
 
-    elif clicked == 4:
+    elif clicked == "Image 5":
         name = 'Sooty Mold'
         name2 = 'Capnodium citri'
         img = 'images/diseases/sooty-mold.jpg'
