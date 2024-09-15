@@ -14,12 +14,13 @@ def main():
     image_paths = ["images/diseases/cercospora2.jpg", 
                    "images/diseases/leaf-miner.jpg", 
                    "images/diseases/leaf-rust.jpg", 
-                   "images/diseases/lichens.jpg", 
+                   "images/diseases/lichens.jpg",
+                   "images/diseases/red-spider-mite.jpg",
                    "images/diseases/sooty-mold.jpg"]
     
     images = [image_to_base64(image_path) for image_path in image_paths]
 
-    titles = ['Cercospora', 'Leaf Miner', 'Leaf Rust', 'Lichens', 'Sooty Mold']
+    titles = ['Cercospora', 'Leaf Miner', 'Leaf Rust', 'Lichens', 'Red Spider Mite','Sooty Mold']
     
     content = f"""
         <style>
@@ -43,10 +44,11 @@ def main():
             height: 100%;
             object-fit: cover;
             filter: brightness(60%);
-            transition: transform 0.2s;
+            transition: transform 0.2s, filter 0.2s;
         }}
         .image-item:hover {{
             transform: scale(1.05);
+            filter: brightness(40%);
         }}
         .image-title {{
             position: absolute;
@@ -73,9 +75,9 @@ def main():
             <div class="image-container"><a href='#' id='Image 3'><img class='image-item' src='{images[2]}'><div class='image-title'>{titles[2]}</div></a></div>
             <div class="image-container"><a href='#' id='Image 4'><img class='image-item' src='{images[3]}'><div class='image-title'>{titles[3]}</div></a></div>
             <div class="image-container"><a href='#' id='Image 5'><img class='image-item' src='{images[4]}'><div class='image-title'>{titles[4]}</div></a></div>
+            <div class="image-container"><a href='#' id='Image 6'><img class='image-item' src='{images[5]}'><div class='image-title'>{titles[5]}</div></a></div>
         </div>
     """
-
 
     clicked = click_detector(content)
 
@@ -131,6 +133,13 @@ def main():
 
     elif clicked == "Image 5":
         name = titles[4]
+        name2 = 'A coffee disease...'
+        img = 'images/diseases/red-spider-mite.jpg'
+        desc = 'Leaf disease description... :bug:'
+        info(name, name2, desc, img)
+
+    elif clicked == "Image 6":
+        name = titles[5]
         name2 = 'Capnodium citri'
         img = 'images/diseases/sooty-mold.jpg'
         desc = '''

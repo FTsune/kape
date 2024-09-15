@@ -45,11 +45,12 @@ def main():
         height: 100%;
         object-fit: cover;
         filter: brightness(60%);
-        transition: transform 0.2s;
+        transition: transform 0.2s, filter 0.2s;
     }}
 
     .image-item:hover {{
         transform: scale(1.05);
+        filter: brightness(40%);
     }}
 
     .image-title {{
