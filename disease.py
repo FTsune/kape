@@ -8,9 +8,6 @@ def image_to_base64(image_path):
         return f"data:image/jpeg;base64,{encoded}"
 
 def main():
-    st.markdown("<p style='color: white; font-size: 35px; font-weight: bold; text-align: center;'>COFFEE LEAF DISEASES</p>", unsafe_allow_html=True)
-    st.markdown("<p style='margin-top: -40px'><hr></p>", unsafe_allow_html=True)
-    
     image_paths = ["images/diseases/cercospora2.jpg", 
                    "images/diseases/leaf-miner.jpg", 
                    "images/diseases/leaf-rust.jpg", 
@@ -24,6 +21,13 @@ def main():
     
     content = f"""
         <style>
+        .image-wrapper {{
+            background-color: #E7FBE6;
+            padding: 20px;
+            border-radius: 20px;
+            max-width: 100%;
+            margin: auto;
+        }}
         .image-grid {{
             display: flex;
             flex-wrap: wrap;
@@ -37,6 +41,7 @@ def main():
             overflow: hidden;
             width: 100%;
             max-width: 500px;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
             aspect-ratio: 21 / 5;
         }}
         .image-item {{
@@ -69,13 +74,15 @@ def main():
             }}
         }}
         </style>
-        <div class="image-grid">
-            <div class="image-container"><a href='#' id='Image 1'><img class='image-item' src='{images[0]}'><div class='image-title'>{titles[0]}</div></a></div>
-            <div class="image-container"><a href='#' id='Image 2'><img class='image-item' src='{images[1]}'><div class='image-title'>{titles[1]}</div></a></div>
-            <div class="image-container"><a href='#' id='Image 3'><img class='image-item' src='{images[2]}'><div class='image-title'>{titles[2]}</div></a></div>
-            <div class="image-container"><a href='#' id='Image 4'><img class='image-item' src='{images[3]}'><div class='image-title'>{titles[3]}</div></a></div>
-            <div class="image-container"><a href='#' id='Image 5'><img class='image-item' src='{images[4]}'><div class='image-title'>{titles[4]}</div></a></div>
-            <div class="image-container"><a href='#' id='Image 6'><img class='image-item' src='{images[5]}'><div class='image-title'>{titles[5]}</div></a></div>
+        <div class="image-wrapper">
+            <div class="image-grid">
+                <div class="image-container"><a href='#' id='Image 1'><img class='image-item' src='{images[0]}'><div class='image-title'>{titles[0]}</div></a></div>
+                <div class="image-container"><a href='#' id='Image 2'><img class='image-item' src='{images[1]}'><div class='image-title'>{titles[1]}</div></a></div>
+                <div class="image-container"><a href='#' id='Image 3'><img class='image-item' src='{images[2]}'><div class='image-title'>{titles[2]}</div></a></div>
+                <div class="image-container"><a href='#' id='Image 4'><img class='image-item' src='{images[3]}'><div class='image-title'>{titles[3]}</div></a></div>
+                <div class="image-container"><a href='#' id='Image 5'><img class='image-item' src='{images[4]}'><div class='image-title'>{titles[4]}</div></a></div>
+                <div class="image-container"><a href='#' id='Image 6'><img class='image-item' src='{images[5]}'><div class='image-title'>{titles[5]}</div></a></div>
+            </div>
         </div>
     """
 
@@ -103,7 +110,7 @@ def main():
     elif clicked == "Image 2":
         name = titles[1]
         name2 = 'Leucoptera caffeina'
-        img = 'images/diseases/leaf-miner.jpg'
+        img = 'images/diseases/leaf-miner2.jpg'
         desc = '''
             Leucoptera caffeina is a species of moth. This leaf miner is one of several 
             related pests on Coffea species. It is found in Angola, Zaire, Kenya 
@@ -141,7 +148,7 @@ def main():
     elif clicked == "Image 6":
         name = titles[5]
         name2 = 'Capnodium citri'
-        img = 'images/diseases/sooty-mold.jpg'
+        img = 'images/diseases/sooty-mold2.jpg'
         desc = '''
             Sooty mold is a collective term for different Ascomycete fungi, 
             which includes many genera, commonly Cladosporium and Alternaria. 

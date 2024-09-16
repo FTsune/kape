@@ -2,10 +2,9 @@
 enableStaticServing = true
 
 [theme]
-primaryColor = "#00fecd"
-backgroundColor = "#111827"
-textColor = "white"
-secondaryBackgroundColor = "#141b2a"
+primaryColor = "#41B3A2"
+backgroundColor = "white"
+secondaryBackgroundColor = "#F5F7F8"
 
 [client]
 toolbarMode = "minimal"

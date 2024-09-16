@@ -8,6 +8,7 @@ import altair as alt
 import time
 import settings
 import helper
+from streamlit_extras.stylable_container import stylable_container
 
 def main():
     # Define global color mappings for classes
@@ -140,7 +141,16 @@ def main():
 
         return [boxes[i] for i in keep]
 
-    with st.container(border=True):
+    with stylable_container(
+        key="container_with_border",
+        css_styles="""
+            {
+                background-color: #f2fcf5;
+                border-radius: 25px;
+                padding: calc(1em - 1px)
+            }
+            """,
+    ):
         col1, col2 = st.columns(2)
 
         with col1:
@@ -160,77 +170,89 @@ def main():
                     st.error(ex)
 
         with col2:
-            def create_circular_progress_chart(metric_name, value):
-                # Create a DataFrame for the metric
-                data = pd.DataFrame({
-                    'metric': [metric_name],
-                    'value': [value]  # Metric value in percentage
-                })
+            # def create_circular_progress_chart(metric_name, value):
+            #     # Create a DataFrame for the metric
+            #     data = pd.DataFrame({
+            #         'metric': [metric_name],
+            #         'value': [value]  # Metric value in percentage
+            #     })
 
-                # Create a chart with an arc mark to represent the progress
-                arc = alt.Chart(data).mark_arc(innerRadius=30, outerRadius=35).encode(
-                    theta=alt.Theta(field='value', type='quantitative', stack=True, scale=alt.Scale(domain=[0, 100])),
-                    color=alt.value('#00fecd')
-                )
+            #     # Create a chart with an arc mark to represent the progress
+            #     arc = alt.Chart(data).mark_arc(innerRadius=30, outerRadius=35).encode(
+            #         theta=alt.Theta(field='value', type='quantitative', stack=True, scale=alt.Scale(domain=[0, 100])),
+            #         color=alt.value('#41B3A2')
+            #     )
 
-                # Create a chart with an arc mark to represent the background
-                background = alt.Chart(data).mark_arc(innerRadius=30, outerRadius=35, color='000000').encode(
-                    theta=alt.Theta(field='value', type='quantitative', stack=True, scale=alt.Scale(domain=[0, 100]))
-                ).transform_calculate(
-                    value='100'
-                )
+            #     # Create a chart with an arc mark to represent the background
+            #     background = alt.Chart(data).mark_arc(innerRadius=30, outerRadius=35, color='000000').encode(
+            #         theta=alt.Theta(field='value', type='quantitative', stack=True, scale=alt.Scale(domain=[0, 100]))
+            #     ).transform_calculate(
+            #         value='100'
+            #     )
 
-                # Create the text in the center
-                text = alt.Chart(data).mark_text(
-                    align='center',
-                    baseline='middle',
-                    size=20,
-                    font='Arial',
-                    color='#00fecd'
-                ).encode(
-                    text=alt.Text('value:Q')
-                )
+            #     # Create the text in the center
+            #     text = alt.Chart(data).mark_text(
+            #         align='center',
+            #         baseline='middle',
+            #         size=20,
+            #         font='Arial',
+            #         color='#00fecd'
+            #     ).encode(
+            #         text=alt.Text('value:Q')
+            #     )
 
-                # Combine the background, arc, and text
-                final_chart = alt.layer(background, arc, text).properties(
-                    width=200,
-                    height=100
-                )
+            #     # Combine the background, arc, and text
+            #     final_chart = alt.layer(background, arc, text).properties(
+            #         width=200,
+            #         height=100
+            #     )
 
-                return final_chart
+            #     return final_chart
 
             # Metrics
-            metrics = [
-                {'name': 'mAP', 'value': 98},
-                {'name': 'Precision', 'value': 98},
-                {'name': 'Recall', 'value': 96}
-            ]
+            # metrics = [
+            #     {'name': 'mAP', 'value': 98},
+            #     {'name': 'Precision', 'value': 98},
+            #     {'name': 'Recall', 'value': 96}
+            # ]
 
-            with st.container(border=True):
-                st.markdown("<p style='font-weight: bold; font-size: 17px; color: #00fecd'>Instructions</p>", unsafe_allow_html=True)
+            with stylable_container(
+                key="container_with_border1",
+                css_styles="""
+                    {
+                        background-color: white;
+                        border-radius: 15px;
+                    }
+                    """,
+            ):
+                st.markdown("<p style='padding: 10px; font-weight: bold; font-size: 17px; color: #41B3A2'>Instructions</p>", unsafe_allow_html=True)
                 st.markdown("""
-                    <p style='margin-top: -12px'>
+                    <p style='margin-top: -12px; padding: 10px'>
                         Open sidebar to start configuring.
                         Upload a valid image file (jpeg, jpg, webp, png) and click "Detect Objects".
                         Wait for a few seconds until it's done detecting objects.
                     </p>
                 """, unsafe_allow_html=True)
-                st.warning("Our model is currently optimized to detect diseases only in coffee leaves.")
+                st.markdown("""
+                    <p style='color: #c2bb4a; background-color: #fcf9d2; margin-top: -12px; padding: 10px; border-radius: 0 0 15px 15px'>
+                        Our model is currently optimized to detect diseases only in coffee leaves.
+                    </p>
+                """, unsafe_allow_html=True)
             
             # Create charts for each metric
-            charts = [create_circular_progress_chart(metric['name'], metric['value']) for metric in metrics]
+            # charts = [create_circular_progress_chart(metric['name'], metric['value']) for metric in metrics]
 
-            st.markdown("""<p style='font-size: 15px; margin-top: 10px; font-weight: bold; text-align: center;'>
-                        MODEL'S PERFORMANCE METRICS
-                        </p>""",
-                        unsafe_allow_html=True)
+            # st.markdown("""<p style='font-size: 15px; margin-top: 10px; font-weight: bold; text-align: center;'>
+            #             MODEL'S PERFORMANCE METRICS
+            #             </p>""",
+            #             unsafe_allow_html=True)
 
-            # Display charts side by side in Streamlit
-            cols = st.columns(3)
-            for col, chart, metric in zip(cols, charts, metrics):
-                with col:
-                    st.altair_chart(chart, use_container_width=True)
-                    st.markdown(f"<p style='text-align: center; color: #00fecd; margin-top: -40px;'>{metric['name']}</p>", unsafe_allow_html=True)
+            # # Display charts side by side in Streamlit
+            # cols = st.columns(3)
+            # for col, chart, metric in zip(cols, charts, metrics):
+            #     with col:
+            #         st.altair_chart(chart, use_container_width=True)
+            #         st.markdown(f"<p style='text-align: center; color: #00fecd; margin-top: -40px;'>{metric['name']}</p>", unsafe_allow_html=True)
                      
             if source_img is None:
                 pass
