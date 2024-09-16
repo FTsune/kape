@@ -7,10 +7,7 @@ def image_to_base64(image_path):
         encoded = base64.b64encode(image.read()).decode()
         return f"data:image/jpeg;base64,{encoded}"
     
-def main(): 
-    st.markdown("<p style='color: white; font-size: 35px; font-weight: bold; text-align: center;'>COFFEE LEAF TYPES</p>", unsafe_allow_html=True)
-    st.markdown("<p style='margin-top: -40px'><hr></p>", unsafe_allow_html=True)
-
+def main():
     image_paths = ["images/leaves/arabica2.jpg",
                    "images/leaves/liberica2.jpg",
                    "images/leaves/robusta.jpg"]
@@ -22,14 +19,19 @@ def main():
 
     content = f"""
     <style>
+    .image-wrapper {{
+        background-color: #E7FBE6;
+        padding: 20px;
+        border-radius: 20px;
+        max-width: 90%;
+        margin: auto;
+    }}
     .image-grid {{
         display: flex;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 10px;
         flex-wrap: wrap;
         justify-content: center;
+        gap: 10px;
     }}
-
     .image-container {{
         position: relative;
         border-radius: 20px;
@@ -37,9 +39,9 @@ def main():
         overflow: hidden;
         width: 100%;
         max-width: 300px;
+        box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         aspect-ratio: 16 / 9;
     }}
-
     .image-item {{
         width: 100%;
         height: 100%;
@@ -47,12 +49,10 @@ def main():
         filter: brightness(60%);
         transition: transform 0.2s, filter 0.2s;
     }}
-
     .image-item:hover {{
         transform: scale(1.05);
         filter: brightness(40%);
     }}
-
     .image-title {{
         position: absolute;
         top: 45%;
@@ -66,7 +66,6 @@ def main():
         text-align: center;
         width: 100%;
     }}
-
     .image-subheader {{
         position: absolute;
         top: 45%;
@@ -81,19 +80,21 @@ def main():
         text-align: center;
         width: 100%;       
     }}
-
     @media (max-width: 500px) {{
         .image-container {{
             max-width: 100%;
         }}
     }}
     </style>
-    <div class="image-grid">
-        <div class="image-container"><a href='#' id='Image 1'><img class='image-item' src='{images[0]}'><div class='image-title'>{titles[0]}</div><div class='image-subheader'>{sci_names[0]}</div></a></div>
-        <div class="image-container"><a href='#' id='Image 2'><img class='image-item' src='{images[1]}'><div class='image-title'>{titles[1]}</div><div class='image-subheader'>{sci_names[1]}</div></a></div>
-        <div class="image-container"><a href='#' id='Image 3'><img class='image-item' src='{images[2]}'><div class='image-title'>{titles[2]}</div><div class='image-subheader'>{sci_names[2]}</div>/a></div>
+    <div class="image-wrapper">
+        <div class="image-grid">
+            <div class="image-container"><a href='#' id='Image 1'><img class='image-item' src='{images[0]}'><div class='image-title'>{titles[0]}</div><div class='image-subheader'>{sci_names[0]}</div></a></div>
+            <div class="image-container"><a href='#' id='Image 2'><img class='image-item' src='{images[1]}'><div class='image-title'>{titles[1]}</div><div class='image-subheader'>{sci_names[1]}</div></a></div>
+            <div class="image-container"><a href='#' id='Image 3'><img class='image-item' src='{images[2]}'><div class='image-title'>{titles[2]}</div><div class='image-subheader'>{sci_names[2]}</div></a></div>
+        </div>
     </div>
     """
+
 
     clicked = click_detector(content)
 
