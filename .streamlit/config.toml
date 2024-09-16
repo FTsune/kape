@@ -4,7 +4,7 @@ enableStaticServing = true
 [theme]
 primaryColor = "#41B3A2"
 backgroundColor = "white"
-secondaryBackgroundColor = "#F5F7F8"
+secondaryBackgroundColor = "#fafafa"
 
 [client]
 toolbarMode = "minimal"

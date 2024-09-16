@@ -145,9 +145,10 @@ def main():
         key="container_with_border",
         css_styles="""
             {
-                background-color: #f2fcf5;
-                border-radius: 25px;
-                padding: calc(1em - 1px)
+                background-color: #fafafa;
+                border-radius: 10px;
+                padding: calc(1em - 1px);
+                box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
             }
             """,
     ):
@@ -221,20 +222,20 @@ def main():
                 css_styles="""
                     {
                         background-color: white;
-                        border-radius: 15px;
+                        border-radius: 10px;
                     }
                     """,
             ):
                 st.markdown("<p style='padding: 10px; font-weight: bold; font-size: 17px; color: #41B3A2'>Instructions</p>", unsafe_allow_html=True)
                 st.markdown("""
-                    <p style='margin-top: -12px; padding: 10px'>
+                    <p style='margin-top: -25px; padding: 10px'>
                         Open sidebar to start configuring.
                         Upload a valid image file (jpeg, jpg, webp, png) and click "Detect Objects".
                         Wait for a few seconds until it's done detecting objects.
                     </p>
                 """, unsafe_allow_html=True)
                 st.markdown("""
-                    <p style='color: #c2bb4a; background-color: #fcf9d2; margin-top: -12px; padding: 10px; border-radius: 0 0 15px 15px'>
+                    <p style='font-size: 12px; color: #c2bb4a; background-color: #fcf9d2; margin-top: -12px; padding: 10px; border-radius: 0 0 10px 10px'>
                         Our model is currently optimized to detect diseases only in coffee leaves.
                     </p>
                 """, unsafe_allow_html=True)
