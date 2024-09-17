@@ -235,7 +235,7 @@ def main():
                     </p>
                 """, unsafe_allow_html=True)
                 st.markdown("""
-                    <p style='font-size: 12px; color: #c2bb4a; background-color: #fcf9d2; margin-top: -12px; padding: 10px; border-radius: 0 0 10px 10px'>
+                    <p style='font-size: 12px; color: #4d8294; background-color: #a6e3f7; margin-top: -12px; padding: 10px; border-radius: 0 0 10px 10px'>
                         Our model is currently optimized to detect diseases only in coffee leaves.
                     </p>
                 """, unsafe_allow_html=True)

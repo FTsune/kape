@@ -1,8 +1,6 @@
 # External packages
 import streamlit as st
-import streamlit_shadcn_ui as ui
 from streamlit_option_menu import option_menu
-import hydralit_components as hc
 
 # Additional Page
 import leaf
@@ -48,12 +46,12 @@ st.set_page_config(
 # )
 
 tab = option_menu(None, ["HOME", "LEAF", "DISEASE", 'TEAM'], 
-    icons=['house', 'mouse', "virus", 'people'], 
+    icons=['house', 'feather', "virus", 'people'], 
     menu_icon="cast", 
     default_index=0, 
     orientation="horizontal",
     styles={
-        "container": {"padding": "0!important",  "background-color": "white"},
+        "container": {"padding": "0!important",  "background-color": "transparent"},
         "icon": {"color": "#41B3A2", "font-size": "15px"}, 
         "nav-link": {"font-size": "14px", 
                      "text-align": "center", 
@@ -61,7 +59,7 @@ tab = option_menu(None, ["HOME", "LEAF", "DISEASE", 'TEAM'],
                      "font-family": "'Arial', 'sans-serif'"},
         "nav-link-selected": {"color": "#41B3A2",
                               "font-weight": "normal", 
-                              "background-color": "white", 
+                              "background-color": "transparent", 
                               "border": "2px solid #41B3A2", 
                               "border-radius": "0px"}
     })
