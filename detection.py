@@ -226,9 +226,9 @@ def main():
                     }
                     """,
             ):
-                st.markdown("<p style='padding: 10px; font-weight: bold; font-size: 17px; color: #41B3A2'>Instructions</p>", unsafe_allow_html=True)
+                st.markdown("<p style='padding: 12px; font-weight: bold; font-size: 17px; color: #41B3A2'>Instructions</p>", unsafe_allow_html=True)
                 st.markdown("""
-                    <p style='margin-top: -25px; padding: 10px'>
+                    <p style='font-size: 14px; margin-top: -30px; padding: 12px'>
                         Open sidebar to start configuring.
                         Upload a valid image file (jpeg, jpg, webp, png) and click "Detect Objects".
                         Wait for a few seconds until it's done detecting objects.
