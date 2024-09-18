@@ -88,13 +88,17 @@ def main():
 
     clicked = click_detector(content)
 
-    @st.experimental_dialog('DISEASE INFO')
+    @st.experimental_dialog('DISEASE INFO 🦠', width="large")
     def info(name, name2, desc, image):
-        with st.container(border=True):
-            st.image(image, use_column_width=True)
-        st.subheader(name)
-        st.markdown(f"<p style='color: gray; margin-top: -15px; font-weight: italic;'><em>{name2}</em></p>", unsafe_allow_html=True)
-        st.markdown(desc)
+        cols = st.columns(2)
+
+        with cols[0]:
+            with st.container(border=True):
+                st.image(image, use_column_width=True)
+        with cols[1]:
+            st.subheader(name)
+            st.markdown(f"<p style='color: gray; margin-top: -15px; font-weight: italic;'><em>{name2}</em></p>", unsafe_allow_html=True)
+            st.markdown(desc)
 
     if clicked == "Image 1":
         name = titles[0]
@@ -141,7 +145,7 @@ def main():
     elif clicked == "Image 5":
         name = titles[4]
         name2 = 'A coffee disease...'
-        img = 'images/diseases/red-spider-mite.jpg'
+        img = 'images/diseases/red-spider-mite2.jpg'
         desc = 'Leaf disease description... :bug:'
         info(name, name2, desc, img)
 

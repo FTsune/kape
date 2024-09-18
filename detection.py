@@ -148,6 +148,8 @@ def main():
                 background-color: #fafafa;
                 border-radius: 10px;
                 padding: calc(1em - 1px);
+                max-width: 1000px;
+                margin: auto;
                 box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
             }
             """,
