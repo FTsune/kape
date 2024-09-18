@@ -20,7 +20,7 @@ def main():
     content = f"""
     <style>
     .image-wrapper {{
-        background-color: #E7FBE6;
+        background: linear-gradient(135deg, #E7FBE6, #B2DFDB);
         padding: 20px;
         border-radius: 20px;
         max-width: 90%;

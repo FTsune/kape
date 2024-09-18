@@ -22,10 +22,10 @@ def main():
     content = f"""
         <style>
         .image-wrapper {{
-            background-color: #E7FBE6;
+            background: linear-gradient(135deg, #E7FBE6, #B2DFDB);
             padding: 20px;
             border-radius: 20px;
-            max-width: 100%;
+            max-width: 90%;
             margin: auto;
         }}
         .image-grid {{
@@ -40,7 +40,7 @@ def main():
             margin: 5px;
             overflow: hidden;
             width: 100%;
-            max-width: 500px;
+            max-width: 400px;
             box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
             aspect-ratio: 21 / 5;
         }}
@@ -68,7 +68,7 @@ def main():
             text-align: center;
             width: 100%;
         }}
-        @media (max-width: 800px) {{
+        @media (max-width: 500px) {{
             .image-container {{
                 max-width: 100%;
             }}

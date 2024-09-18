@@ -225,19 +225,25 @@ def main():
                     {
                         background-color: white;
                         border-radius: 10px;
+                        min-width: 100px;
                     }
                     """,
             ):
                 st.markdown("<p style='padding: 12px; font-weight: bold; font-size: 17px; color: #41B3A2'>Instructions</p>", unsafe_allow_html=True)
                 st.markdown("""
                     <p style='font-size: 14px; margin-top: -30px; padding: 12px'>
-                        Open sidebar to start configuring.
+                        Open the sidebar to start configuring.
                         Upload a valid image file (jpeg, jpg, webp, png) and click "Detect Objects".
                         Wait for a few seconds until it's done detecting objects.
+                        <br><br>
+                        Ensure that the photo clearly shows a coffee leaf. Avoid bluriness and make
+                        sure the leaf is the main focus of the image.
+                        <br><br>
+                        For best results, upload an image with a resolution of at least 1024 x 728 pixels. 
                     </p>
                 """, unsafe_allow_html=True)
                 st.markdown("""
-                    <p style='font-size: 12px; color: #4d8294; background-color: #a6e3f7; margin-top: -12px; padding: 10px; border-radius: 0 0 10px 10px'>
+                    <p style='font-size: 12px; color: #41B3A2; background-color: #b2dfdb; margin-top: -12px; padding: 10px; border-radius: 0 0 10px 10px'>
                         Our model is currently optimized to detect diseases only in coffee leaves.
                     </p>
                 """, unsafe_allow_html=True)
