@@ -137,16 +137,27 @@ def main():
 
     elif clicked == "Image 4":
         name = titles[3]
-        name2 = 'A coffee disease...'
-        img = 'images/diseases/lichens.jpg'
-        desc = 'Leaf disease description... :bug:'
+        name2 = 'Foliicolous lichens'
+        img = 'images/diseases/lichens2.jpg'
+        desc = '''
+            Foliicolous lichens are those that grow on the leaves of vascular plants. 
+            Such lichens are widespread and are especially common in the tropical areas where there 
+            are long periods of high humidity. Many foliicolous species are strictly foliicolous 
+            but some may also be found on other plant parts (twigs, branches, trunks) 
+            or even non-plant substrates such as rocks.
+        '''
         info(name, name2, desc, img)
 
     elif clicked == "Image 5":
         name = titles[4]
-        name2 = 'A coffee disease...'
+        name2 = 'Tetranychus urticae'
         img = 'images/diseases/red-spider-mite2.jpg'
-        desc = 'Leaf disease description... :bug:'
+        desc = '''
+            Red spider mites are around 0.5mm long and are also known as the two-spotted mite. 
+            They are usually considered a pest as they suck sap from plants, reducing their vigour. 
+            If left unchecked, red spider mites can multiply quickly and wreak havoc in a greenhouse 
+            or on house plants indoors.
+        '''
         info(name, name2, desc, img)
 
     elif clicked == "Image 6":
