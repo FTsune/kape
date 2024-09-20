@@ -3,12 +3,6 @@ The Barako BAMA is a web application built using Streamlit. This app provides a 
 
 ## Table of Contents
 - [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Screenshots](#screenshots)
-- [Technologies Used](#technologies-used)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Features
 - **Model Selection**: Choose from:
