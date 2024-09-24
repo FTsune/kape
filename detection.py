@@ -3,8 +3,6 @@ from pathlib import Path
 import PIL
 import cv2
 import numpy as np
-import pandas as pd
-import altair as alt
 import time
 import settings
 import helper
@@ -158,67 +156,23 @@ def main():
 
         with col1:
             with st.container(border=True):
+                image_placeholder = st.empty()
+                # check_res = st.empty()
                 try:
                     if source_img is None:
                         default_image_path = str(settings.DEFAULT_DETECT_IMAGE)
                         default_image = PIL.Image.open(default_image_path)
-                        st.image(default_image_path, caption="Sample Image: Objects Detected",
+                        image_placeholder.image(default_image_path, caption="Sample Image: Objects Detected",
                                 use_column_width=True)
                     else:
                         uploaded_image = PIL.Image.open(source_img)
-                        st.image(source_img, caption="Uploaded Image",
+                        image_placeholder.image(source_img, caption="Uploaded Image",
                                 use_column_width=True)
                 except Exception as ex:
                     st.error("Error occurred while opening the image.")
                     st.error(ex)
 
         with col2:
-            # def create_circular_progress_chart(metric_name, value):
-            #     # Create a DataFrame for the metric
-            #     data = pd.DataFrame({
-            #         'metric': [metric_name],
-            #         'value': [value]  # Metric value in percentage
-            #     })
-
-            #     # Create a chart with an arc mark to represent the progress
-            #     arc = alt.Chart(data).mark_arc(innerRadius=30, outerRadius=35).encode(
-            #         theta=alt.Theta(field='value', type='quantitative', stack=True, scale=alt.Scale(domain=[0, 100])),
-            #         color=alt.value('#41B3A2')
-            #     )
-
-            #     # Create a chart with an arc mark to represent the background
-            #     background = alt.Chart(data).mark_arc(innerRadius=30, outerRadius=35, color='000000').encode(
-            #         theta=alt.Theta(field='value', type='quantitative', stack=True, scale=alt.Scale(domain=[0, 100]))
-            #     ).transform_calculate(
-            #         value='100'
-            #     )
-
-            #     # Create the text in the center
-            #     text = alt.Chart(data).mark_text(
-            #         align='center',
-            #         baseline='middle',
-            #         size=20,
-            #         font='Arial',
-            #         color='#00fecd'
-            #     ).encode(
-            #         text=alt.Text('value:Q')
-            #     )
-
-            #     # Combine the background, arc, and text
-            #     final_chart = alt.layer(background, arc, text).properties(
-            #         width=200,
-            #         height=100
-            #     )
-
-            #     return final_chart
-
-            # Metrics
-            # metrics = [
-            #     {'name': 'mAP', 'value': 98},
-            #     {'name': 'Precision', 'value': 98},
-            #     {'name': 'Recall', 'value': 96}
-            # ]
-
             with stylable_container(
                 key="container_with_border1",
                 css_styles="""
@@ -247,22 +201,7 @@ def main():
                         Our model is currently optimized to detect diseases only in coffee leaves.
                     </p>
                 """, unsafe_allow_html=True)
-            
-            # Create charts for each metric
-            # charts = [create_circular_progress_chart(metric['name'], metric['value']) for metric in metrics]
-
-            # st.markdown("""<p style='font-size: 15px; margin-top: 10px; font-weight: bold; text-align: center;'>
-            #             MODEL'S PERFORMANCE METRICS
-            #             </p>""",
-            #             unsafe_allow_html=True)
-
-            # # Display charts side by side in Streamlit
-            # cols = st.columns(3)
-            # for col, chart, metric in zip(cols, charts, metrics):
-            #     with col:
-            #         st.altair_chart(chart, use_container_width=True)
-            #         st.markdown(f"<p style='text-align: center; color: #00fecd; margin-top: -40px;'>{metric['name']}</p>", unsafe_allow_html=True)
-                     
+                    
             if source_img is None:
                 pass
             else:
@@ -306,19 +245,27 @@ def main():
                                 with st.container(border=True):
                                     st.image(res_combined, caption='Combined Detected Image', use_column_width=True)
 
+                                image_placeholder.image(res_combined, caption='Detected Image', use_column_width=True)
+
                                 end_time = time.time()
                                 elapsed_time = end_time - start_time
                                 st.success(f"Prediction finished within {elapsed_time:.2f}s!")
-                                    
-                                with st.popover("Combined Detection Results"):
-                                    # Iterate over each box separately
+
+                                def res():
                                     st.write("Disease Detection Results:")
                                     for box in disease_boxes:
                                         st.write(box)
 
                                     st.write("Leaf Detection Results:")
                                     for box in leaf_boxes:
-                                        st.write(box)
+                                        st.write(box)    
+
+                                with st.popover("Combined Detection Results"):
+                                    res()
+
+                                # with check_res.popover("Combined Detection Results"):
+                                #     res()
+                                
                         both_models()
 
                     else:
@@ -350,6 +297,8 @@ def main():
                                 with st.container(border=True):
                                     st.image(res_plotted, caption='Detected Image', use_column_width=True)
 
+                                image_placeholder.image(res_plotted, caption='Detected Image', use_column_width=True)
+
                                 end_time = time.time()
                                 elapsed_time = end_time - start_time
                                 st.success(f"Prediction finished within {elapsed_time:.2f}s!")
@@ -357,7 +306,7 @@ def main():
                                 try:
                                     with st.popover("Detection Results"):
                                         for box in boxes:
-                                            st.write(box.data)
+                                            st.write(box)
                                 except Exception as ex:
                                     st.write("No image is uploaded yet!")
                             
