@@ -2,52 +2,81 @@ import streamlit as st
 from pathlib import Path
 import PIL
 import cv2
+from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
 import numpy as np
 import time
 import settings
 import helper
 from streamlit_extras.stylable_container import stylable_container
 
+def run_live_detection(model, leaf_colors, disease_colors):
+    st.title("Live Detection")
+    video_placeholder = st.empty()
+    cap = cv2.VideoCapture(0)
+
+    while True:
+        if not st.session_state.get('enable_live_detection', False):
+            break
+
+        ret, frame = cap.read()
+        if not ret:
+            st.error("Failed to capture image from webcam.")
+            time.sleep(1)
+            continue
+
+        results = model(frame)
+
+        for result in results:
+            boxes = result.boxes
+            for box in boxes:
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                conf = box.conf[0]
+                cls = int(box.cls[0])
+
+                if cls in leaf_colors:
+                    color = leaf_colors[cls]
+                else:
+                    color = disease_colors[cls - len(leaf_colors)]
+
+                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                label = f"{model.names[cls]} {conf:.2f}"
+                cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+
+        video_placeholder.image(frame, channels="BGR", use_column_width=True)
+
+    cap.release()
+
 def main():
-    # Define global color mappings for classes
     cleaf_colors = {
-        0: (0, 255, 0),    # Green for 'arabica'
-        1: (0, 255, 255),  # Yellow for 'liberica'
-        2: (0, 0, 255)     # Blue for 'robusta'
+        0: (0, 255, 0),
+        1: (0, 255, 255),
+        2: (0, 0, 255)
     }
 
     cdisease_colors = {
-        0: (255, 165, 0),  # Orange for 'brown_eye_spot'
-        1: (255, 0, 255),  # Magenta for 'leaf_miner'
-        2: (255, 0, 0),    # Red for 'leaf_rust'
-        3: (128, 0, 128)   # Purple for 'red_spider_mite'
+        0: (255, 165, 0),
+        1: (255, 0, 255),
+        2: (255, 0, 0),
+        3: (128, 0, 128)
     }
 
-    # Sidebar
     st.sidebar.header("DL MODEL CONFIGURATION")
 
-
-    # Model Selection
     with st.sidebar:
-        #st.markdown("<p style='font-size: 14px;'>Select Detection Model</p>", unsafe_allow_html=True)
         detection_model_choice = st.selectbox(
-                                    "Select Detection Model",
-                                    ("Disease", "Leaf", "Both Models"),
-                                    index=0,
-                                    placeholder="Choose a model..."
-                                )
+            "Select Detection Model",
+            ("Disease", "Leaf", "Both Models"),
+            index=0
+        )
+
         adv_opt = st.toggle("Advanced Options")
 
         if adv_opt:
             confidence = float(st.sidebar.slider("Select Model Confidence", 
-                                                25, 100, 40,
-                                                help="A higher value means the model will only make predictions when it is more certain, which can reduce false positives but might also increase the number of 'unsure' results.")) / 100
+                25, 100, 40)) / 100
 
-            # New slider for overlap threshold
-            overlap_threshold = float(st.sidebar.slider("Select Overlap Threshold", 0, 100, 30,
-                                                        help="A higher threshold means the model will require more overlap between detected regions to consider them as distinct, which can help reduce false positives but may also miss some overlapping objects.")) / 100
+            overlap_threshold = float(st.sidebar.slider("Select Overlap Threshold", 0, 100, 30)) / 100
 
-    # Selecting Detection Model and setting model path
     model = None
     model_path = None
     
@@ -65,34 +94,48 @@ def main():
         st.error(f"Unable to load model. Check the specified path: {model_path}")
         st.error(ex)
 
-    st.sidebar.divider()    
+    if 'enable_live_detection' not in st.session_state:
+        st.session_state.enable_live_detection = False
+
+    enable_live_detection = st.sidebar.checkbox(
+        "Enable Live Detection", 
+        value=st.session_state.enable_live_detection,
+        key='live_detection_checkbox'
+    )
+
+    if enable_live_detection != st.session_state.enable_live_detection:
+        st.session_state.enable_live_detection = enable_live_detection
+        st.experimental_rerun()
+
+    if st.session_state.enable_live_detection:
+        if detection_model_choice == 'Both Models':
+            st.error("Live detection is not supported with 'Both Models' option. Please select either 'Disease' or 'Leaf' model.")
+        else:
+            run_live_detection(model, cleaf_colors, cdisease_colors)
+
+    st.sidebar.divider()   
     st.sidebar.header("TRY ME")
 
     source_img = st.sidebar.file_uploader(
         "Choose an image...", type=("jpg", "jpeg", "png", 'bmp', 'webp'))
 
     def draw_bounding_boxes(image, boxes, labels, colors):
-        """Function to draw bounding boxes with labels and confidence on the image."""
         res_image = np.array(image)
-        height, width, _ = res_image.shape  # Get image dimensions
+        height, width, _ = res_image.shape
 
         for box in boxes:
-            # Extract information from the box
             x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
             x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
             label_idx = int(box.cls)
             confidence = float(box.conf)
             label = f"{labels[label_idx]}: {confidence:.2f}"
 
-            # Determine color based on class
             color = colors[label_idx]
 
-            # Adjust font scale and thickness based on image size
             font_scale = max(0.6, min(width, height) / 600)
             font_thickness = max(2, min(width, height) // 250)
             box_thickness = max(3, min(width, height) // 200)
 
-            # Draw the bounding box
             cv2.rectangle(res_image, (x1, y1), (x2, y2), color=color, thickness=box_thickness)
             cv2.putText(res_image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
 
