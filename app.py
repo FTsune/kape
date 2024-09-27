@@ -45,7 +45,7 @@ st.set_page_config(
 #     unsafe_allow_html=True
 # )
 
-tab = option_menu(None, ["HOME", "LEAF", "DISEASE", 'TEAM'], 
+tab = option_menu(None, ["Home", "Leaf", "Disease", 'Team'], 
     icons=['house', 'feather', "virus", 'people'], 
     menu_icon="cast", 
     default_index=0, 
@@ -55,24 +55,24 @@ tab = option_menu(None, ["HOME", "LEAF", "DISEASE", 'TEAM'],
         "icon": {"color": "#41B3A2", "font-size": "15px"}, 
         "nav-link": {"font-size": "14px", 
                      "text-align": "center", 
-                     "margin":"0px", "--hover-color": "#F5F7F8",
+                     "margin":"0px", "--hover-color": "#fafafa",
                      "font-family": "'Arial', 'sans-serif'"},
         "nav-link-selected": {"color": "#41B3A2",
                               "font-weight": "normal", 
                               "background-color": "transparent", 
-                              "border": "2px solid #41B3A2", 
+                            #   "border": "2px solid #41B3A2", 
                               "border-radius": "0px"}
     })
 
-if tab == 'HOME':
+if tab == 'Home':
     detection.main()
 
-elif tab == 'LEAF':
+elif tab == 'Leaf':
     leaf.main()
 
-elif tab == 'DISEASE':
+elif tab == 'Disease':
     disease.main()
 
-elif tab == 'TEAM':
+elif tab == 'Team':
     team.main()
     
