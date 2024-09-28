@@ -6,7 +6,9 @@ import numpy as np
 import time
 import settings
 import helper
+import uuid
 from streamlit_extras.stylable_container import stylable_container
+
 def run_live_detection(model, leaf_colors, disease_colors):
     st.title("Live Detection")
     video_placeholder = st.empty()
@@ -47,6 +49,30 @@ def run_live_detection(model, leaf_colors, disease_colors):
         video_placeholder.image(frame, channels="BGR", use_column_width=True)
 
     cap.release()
+
+def format_detection_results(boxes, labels):
+    predictions = []
+    for box in boxes:
+        x1, y1, x2, y2 = map(int, box.xyxy[0])
+        width = x2 - x1
+        height = y2 - y1
+        confidence = float(box.conf[0])
+        class_id = int(box.cls[0])
+        class_name = labels[class_id]
+        
+        prediction = {
+            "x": x1,
+            "y": y1,
+            "width": width,
+            "height": height,
+            "confidence": round(confidence, 3),
+            "class": class_name,
+            "class_id": class_id,
+            "detection_id": str(uuid.uuid4())
+        }
+        predictions.append(prediction)
+    
+    return {"predictions": predictions}
 
 def main():
     # Define global color mappings for classes
@@ -251,9 +277,7 @@ def main():
                             Wait for a few seconds until it's done detecting objects.
                             <br><br>
                             Ensure that the photo clearly shows a coffee leaf. Avoid bluriness and make
-                            sure the leaf is the main focus of the image.
-                            <br><br>
-                            For best results, upload an image with a resolution of at least 1024 x 728 pixels. 
+                            sure the leaf is the main focus of the image. 
                         </p>
                     """, unsafe_allow_html=True)
                     st.markdown("""
@@ -313,14 +337,14 @@ def main():
 
                                     def res():
                                         st.write("Disease Detection Results:")
-                                        for box in disease_boxes:
-                                            st.write(box)
+                                        disease_results = format_detection_results(disease_boxes, res_disease[0].names)
+                                        st.json(disease_results)
 
                                         st.write("Leaf Detection Results:")
-                                        for box in leaf_boxes:
-                                            st.write(box)    
+                                        leaf_results = format_detection_results(leaf_boxes, res_leaf[0].names)
+                                        st.json(leaf_results)
 
-                                    with st.popover("Combined Detection Results"):
+                                    with st.popover("Advanced Detection Results"):
                                         res()
 
                                     # with check_res.popover("Combined Detection Results"):
@@ -364,9 +388,9 @@ def main():
                                     st.success(f"Prediction finished within {elapsed_time:.2f}s!")
 
                                     try:
-                                        with st.popover("Detection Results"):
-                                            for box in boxes:
-                                                st.write(box)
+                                        with st.popover("Advanced Detection Results"):
+                                            results = format_detection_results(boxes, labels)
+                                            st.json(results)
                                     except Exception as ex:
                                         st.write("No image is uploaded yet!")
                                 
