@@ -20,14 +20,14 @@ def main():
     content = f"""
     <style>
     .container-header {{
-                color: #41B3A2; 
+                color: white; 
                 font-size: 35px; 
                 font-weight: bold; 
                 text-align: center;
                 margin-bottom: 10px;
     }}
     .image-wrapper {{
-        background: linear-gradient(135deg, #E7FBE6, #B2DFDB);
+        background: linear-gradient(#1a3c34, #00fecd, #1a3c34);
         padding: 20px;
         border-radius: 20px;
         max-width: 90%;
@@ -95,7 +95,7 @@ def main():
     </style>
     <div class="image-wrapper">
         <p class="container-header">LEAVES</p>
-        <hr style="margin-top: -10px; border: 1px solid #41B3A2;">
+        <hr style="margin-top: -10px; border: 1px solid #00fecd;">
         <div class="image-grid">
             <div class="image-container"><a href='#' id='Image 1'><img class='image-item' src='{images[0]}'><div class='image-title'>{titles[0]}</div><div class='image-subheader'>{sci_names[0]}</div></a></div>
             <div class="image-container"><a href='#' id='Image 2'><img class='image-item' src='{images[1]}'><div class='image-title'>{titles[1]}</div><div class='image-subheader'>{sci_names[1]}</div></a></div>

@@ -229,12 +229,12 @@ def main():
             key="container_with_border",
             css_styles="""
                 {
-                    background-color: #fafafa;
+                    background-color: #141b2a;
                     border-radius: 10px;
                     padding: calc(1em - 1px);
                     max-width: 1000px;
                     margin: auto;
-                    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+                    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
                 }
                 """,
         ):
@@ -263,15 +263,15 @@ def main():
                     key="container_with_border1",
                     css_styles="""
                         {
-                            background-color: white;
+                            background-color: #111827;
                             border-radius: 10px;
                             min-width: 100px;
                         }
                         """,
                 ):
-                    st.markdown("<p style='padding: 12px; font-weight: bold; font-size: 17px; color: #41B3A2'>Instructions</p>", unsafe_allow_html=True)
+                    st.markdown("<p style='padding: 12px; font-weight: bold; font-size: 17px; color: #00fecd'>Instructions</p>", unsafe_allow_html=True)
                     st.markdown("""
-                        <p style='font-size: 14px; margin-top: -30px; padding: 12px'>
+                        <p style='color: white; font-size: 14px; margin-top: -30px; padding: 12px'>
                             Open the sidebar to start configuring.
                             Upload a valid image file (jpeg, jpg, webp, png) and click "Detect Objects".
                             Wait for a few seconds until it's done detecting objects.
@@ -281,7 +281,7 @@ def main():
                         </p>
                     """, unsafe_allow_html=True)
                     st.markdown("""
-                        <p style='font-size: 12px; color: #41B3A2; background-color: #b2dfdb; margin-top: -12px; padding: 10px; border-radius: 0 0 10px 10px'>
+                        <p style='font-weight: bold; font-size: 13px; color: #00fecd; background-color: transparent; margin-top: -12px; padding: 10px; border-radius: 0 0 10px 10px'>
                             Our model is currently optimized to detect diseases only in coffee leaves.
                         </p>
                     """, unsafe_allow_html=True)

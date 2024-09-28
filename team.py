@@ -6,15 +6,15 @@ def main():
         """
         <style>
             .container {
-                background-color: #fafafa;
+                background-color: #141b2a;
                 padding: 20px;
                 border-radius: 20px;
                 max-width: 80%; /* Adjust this value to change the width */
                 margin: auto; /* Center the container */
-                box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+                box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
             }
             .container-header {
-                color: #41B3A2; 
+                color: #00fecd; 
                 font-size: 35px; 
                 font-weight: bold; 
                 text-align: center;
@@ -60,7 +60,7 @@ def main():
             }
             .grid-item .subtitle {
                 font-weight: normal;
-                color: black;
+                color: white;
                 margin-top: -20px;
             }
             @media (max-width: 600px) {
