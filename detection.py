@@ -74,11 +74,57 @@ def format_detection_results(boxes, labels):
     
     return {"predictions": predictions}
 
-def main():
+def main(theme_colors):
+    # Initialize session state for theme if not already set
+    if 'dark_theme' not in st.session_state:
+        st.session_state.dark_theme = False
+
+    # Sidebar theme selection
+    with st.sidebar:
+        st.header("THEME")
+        theme_option = st.selectbox(
+            "Choose theme",
+            options=["Light", "Dark"],
+            index=1 if st.session_state.dark_theme else 0,
+            key="theme_selector"
+        )
+        
+    # Update session state based on theme selection
+    new_theme = (theme_option == "Dark")
+    if new_theme != st.session_state.dark_theme:
+        st.session_state.dark_theme = new_theme
+        st.experimental_rerun()
+
+    # Apply theme colors
+    if st.session_state.dark_theme:
+        primary_color = theme_colors['DARK']['primaryColor']
+        background_color = theme_colors['DARK']['backgroundColor']
+        secondary_background_color = theme_colors['DARK']['secondaryBackgroundColor']
+        text_color = theme_colors['DARK']['textColor']
+    else:
+        primary_color = theme_colors['LIGHT']['primaryColor']
+        background_color = theme_colors['LIGHT']['backgroundColor']
+        secondary_background_color = theme_colors['LIGHT']['secondaryBackgroundColor']
+        text_color = theme_colors['LIGHT']['textColor']
+
+    # Apply theme to Streamlit
+    st.markdown(f"""
+        <style>
+        .stApp {{
+            background-color: {background_color};
+            color: {text_color};
+        }}
+        .stSelectbox, .stSelectbox > div > div > div {{
+            background-color: {secondary_background_color};
+            color: {text_color};
+        }}
+        </style>
+    """, unsafe_allow_html=True)
+
     # Define global color mappings for classes
     cleaf_colors = {
         0: (0, 255, 0),    # Green for 'arabica'
-        1: (0, 255, 255),  # Yellow for 'liberica'
+        1: (0, 255, 255),  # Aqua for 'liberica'
         2: (0, 0, 255)     # Blue for 'robusta'
     }
 
@@ -227,15 +273,15 @@ def main():
 
         with stylable_container(
             key="container_with_border",
-            css_styles="""
-                {
-                    background-color: #fafafa;
+            css_styles=f"""
+                {{
+                    background-color: {secondary_background_color};
                     border-radius: 10px;
                     padding: calc(1em - 1px);
                     max-width: 1000px;
                     margin: auto;
                     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-                }
+                }}
                 """,
         ):
             col1, col2 = st.columns(2)
@@ -261,17 +307,17 @@ def main():
             with col2:
                 with stylable_container(
                     key="container_with_border1",
-                    css_styles="""
-                        {
-                            background-color: white;
+                    css_styles=f"""
+                        {{
+                            background-color: {background_color};
                             border-radius: 10px;
                             min-width: 100px;
-                        }
+                        }}
                         """,
                 ):
-                    st.markdown("<p style='padding: 12px; font-weight: bold; font-size: 17px; color: #41B3A2'>Instructions</p>", unsafe_allow_html=True)
-                    st.markdown("""
-                        <p style='font-size: 14px; margin-top: -30px; padding: 12px'>
+                    st.markdown(f"<p style='border-radius: 10px 10px 0px 0px; border: 1px solid; border-bottom: 0px; padding: 12px; font-weight: bold; font-size: 17px; color: {primary_color}'>INSTRUCTIONS</p>", unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <p style='border-right: 1px solid {primary_color}; border-left: 1px solid {primary_color}; font-size: 14px; margin: -30px 0; padding: 12px; color: {text_color}'>
                             Open the sidebar to start configuring.
                             Upload a valid image file (jpeg, jpg, webp, png) and click "Detect Objects".
                             Wait for a few seconds until it's done detecting objects.
@@ -280,8 +326,8 @@ def main():
                             sure the leaf is the main focus of the image. 
                         </p>
                     """, unsafe_allow_html=True)
-                    st.markdown("""
-                        <p style='font-size: 12px; color: #41B3A2; background-color: #b2dfdb; margin-top: -12px; padding: 10px; border-radius: 0 0 10px 10px'>
+                    st.markdown(f"""
+                        <p style='border: 1px solid; border-top: 0px; font-size: 12px; color: {primary_color}; margin-top: 10px; padding: 10px; border-radius: 0 0 10px 10px'>
                             Our model is currently optimized to detect diseases only in coffee leaves.
                         </p>
                     """, unsafe_allow_html=True)
@@ -397,4 +443,20 @@ def main():
                             single_model()
 
 if __name__ == '__main__':
-    main()
+    # This will be called when running detection.py directly
+    # You can set default colors here for testing
+    default_theme = {
+        "LIGHT": {
+            "primaryColor": "#41B3A2",
+            "backgroundColor": "white",
+            "secondaryBackgroundColor": "#fafafa",
+            "textColor": "black"
+        },
+        "DARK": {
+            "primaryColor": "#00fecd",
+            "backgroundColor": "#111827",
+            "secondaryBackgroundColor": "#141b2a",
+            "textColor": "white"
+        }
+    }
+    main(default_theme)
