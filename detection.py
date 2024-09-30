@@ -88,6 +88,9 @@ def main(theme_colors):
             index=1 if st.session_state.dark_theme else 0,
             key="theme_selector"
         )
+
+        warn = st.empty()
+        st.divider()
         
     # Update session state based on theme selection
     new_theme = (theme_option == "Dark")
@@ -120,6 +123,12 @@ def main(theme_colors):
         }}
         </style>
     """, unsafe_allow_html=True)
+
+    warn.markdown(f"""<div style='background-color: transparent; border: 1px solid {primary_color}; border-radius: 10px;'>
+                    <p style='font-size: 12px; color: {primary_color}; margin: 0px 0px; padding: 10px;'>
+                    This feature is still in development and may cause unexpected behavior when used.</p>
+                    </div>""",
+                unsafe_allow_html=True) 
 
     # Define global color mappings for classes
     cleaf_colors = {
