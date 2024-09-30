@@ -13,6 +13,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+st.logo('images/icon.png')
+
 # Define color schemes
 THEME_COLORS = {
     "LIGHT": {
@@ -49,6 +51,7 @@ menu_styles = {
     "icon": {"color": current_theme["primaryColor"], "font-size": "15px"},
     "nav-link": {
         "font-size": "14px",
+        "text-shadow": "2px 2px 4px rgba(0, 0, 0, 0.2)",
         "text-align": "center",
         "margin": "0px",
         "--hover-color": current_theme["secondaryBackgroundColor"],
@@ -87,4 +90,4 @@ elif tab == 'Team':
 # Force a rerun if the theme has changed
 if 'previous_theme' not in st.session_state or st.session_state.previous_theme != st.session_state.dark_theme:
     st.session_state.previous_theme = st.session_state.dark_theme
-    st.experimental_rerun()
+    st.rerun()
