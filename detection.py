@@ -101,6 +101,7 @@ def main(theme_colors):
         background_color = theme_colors['DARK']['backgroundColor']
         secondary_background_color = theme_colors['DARK']['secondaryBackgroundColor']
         text_color = theme_colors['DARK']['textColor']
+        st.sidebar.warning('This is an experimental feature and may cause unexpected behavior.', icon=":material/warning:")
     else:
         primary_color = theme_colors['LIGHT']['primaryColor']
         background_color = theme_colors['LIGHT']['backgroundColor']

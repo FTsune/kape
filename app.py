@@ -50,6 +50,7 @@ menu_styles = {
     "nav-link": {
         "font-size": "14px",
         "text-align": "center",
+        "text-shadow": "2px 2px 4px rgba(0, 0, 0, 0.2)",
         "margin": "0px",
         "--hover-color": current_theme["secondaryBackgroundColor"],
         "font-family": "'Arial', 'sans-serif'",
