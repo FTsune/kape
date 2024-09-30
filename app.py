@@ -90,4 +90,4 @@ elif tab == 'Team':
 # Force a rerun if the theme has changed
 if 'previous_theme' not in st.session_state or st.session_state.previous_theme != st.session_state.dark_theme:
     st.session_state.previous_theme = st.session_state.dark_theme
-    st.rerun()
+    st.experimental_rerun()
