@@ -145,12 +145,11 @@ def main(theme_colors):
     }
 
     # Sidebar
-    st.sidebar.header("DL MODEL CONFIGURATION")
+    st.sidebar.header("MODEL CONFIGURATION")
 
 
     # Model Selection
     with st.sidebar:
-        #st.markdown("<p style='font-size: 14px;'>Select Detection Model</p>", unsafe_allow_html=True)
         detection_model_choice = st.selectbox(
                                     "Select Detection Model",
                                     ("Disease", "Leaf", "Both Models"),
@@ -298,7 +297,7 @@ def main(theme_colors):
             with col1:
                 with st.container(border=True):
                     image_placeholder = st.empty()
-                    # check_res = st.empty()
+
                     try:
                         if source_img is None:
                             default_image_path = str(settings.DEFAULT_DETECT_IMAGE)
@@ -324,22 +323,25 @@ def main(theme_colors):
                         }}
                         """,
                 ):
-                    st.markdown(f"<p style='border-radius: 10px 10px 0px 0px; border: 1px solid; border-bottom: 0px; padding: 12px; font-weight: bold; font-size: 17px; color: {primary_color}'>INSTRUCTIONS</p>", unsafe_allow_html=True)
-                    st.markdown(f"""
-                        <p style='border-right: 1px solid {primary_color}; border-left: 1px solid {primary_color}; font-size: 14px; margin: -30px 0; padding: 12px; color: {text_color}'>
-                            Open the sidebar to start configuring.
-                            Upload a valid image file (jpeg, jpg, webp, png) and click "Detect Objects".
-                            Wait for a few seconds until it's done detecting objects.
-                            <br><br>
-                            Ensure that the photo clearly shows a coffee leaf. Avoid bluriness and make
-                            sure the leaf is the main focus of the image. 
-                        </p>
-                    """, unsafe_allow_html=True)
-                    st.markdown(f"""
-                        <p style='border: 1px solid; border-top: 0px; font-size: 12px; color: {primary_color}; margin-top: 10px; padding: 10px; border-radius: 0 0 10px 10px'>
-                            Our model is currently optimized to detect diseases only in coffee leaves.
-                        </p>
-                    """, unsafe_allow_html=True)
+                    col2_placeholder = st.empty()
+                    
+                    with col2_placeholder.container():
+                        st.markdown(f"<p style='border-radius: 10px 10px 0px 0px; border: 1px solid; border-bottom: 0px; padding: 12px; font-weight: bold; font-size: 17px; color: {primary_color}'>INSTRUCTIONS</p>", unsafe_allow_html=True)
+                        st.markdown(f"""
+                            <p style='border-right: 1px solid {primary_color}; border-left: 1px solid {primary_color}; font-size: 14px; margin: -30px 0; padding: 12px; color: {text_color}'>
+                                Open the sidebar to start configuring.
+                                Upload a valid image file (jpeg, jpg, webp, png) and click "Detect Objects".
+                                Wait for a few seconds until it's done detecting objects.
+                                <br><br>
+                                Ensure that the photo clearly shows a coffee leaf. Avoid bluriness and make
+                                sure the leaf is the main focus of the image. 
+                            </p>
+                        """, unsafe_allow_html=True)
+                        st.markdown(f"""
+                            <p style='border: 1px solid; border-top: 0px; font-size: 12px; color: {primary_color}; margin-top: 10px; padding: 10px; border-radius: 0 0 10px 10px'>
+                                Our model is currently optimized to detect diseases only in coffee leaves.
+                            </p>
+                        """, unsafe_allow_html=True)
                         
                 if source_img is None:
                     pass
@@ -402,7 +404,7 @@ def main(theme_colors):
                                     with st.popover("Advanced Detection Results"):
                                         res()
 
-                                    # with check_res.popover("Combined Detection Results"):
+                                    # with col2_placeholder.expander("Combined Detection Results"):
                                     #     res()
                                     
                             both_models()
