@@ -112,7 +112,7 @@ def main():
 
     clicked = click_detector(content)
 
-    @st.experimental_dialog('DISEASE INFO 🦠', width="large")
+    @st.dialog('DISEASE INFO 🦠', width="large")
     def info(name, name2, desc, image):
         cols = st.columns(2)
 
