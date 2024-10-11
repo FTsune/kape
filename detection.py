@@ -96,7 +96,7 @@ def main(theme_colors):
     new_theme = (theme_option == "Dark")
     if new_theme != st.session_state.dark_theme:
         st.session_state.dark_theme = new_theme
-        st.experimental_rerun()
+        st.rerun()
 
     # Apply theme colors
     if st.session_state.dark_theme:
@@ -138,10 +138,12 @@ def main(theme_colors):
     }
 
     cdisease_colors = {
-        0: (255, 165, 0),  # Orange for 'brown_eye_spot'
-        1: (255, 0, 255),  # Magenta for 'leaf_miner'
-        2: (255, 0, 0),    # Red for 'leaf_rust'
-        3: (128, 0, 128)   # Purple for 'red_spider_mite'
+        0: (255, 165, 0),  # Orange for 'algal growth'
+        1: (255, 0, 255),  # Magenta for 'cercospora'
+        2: (255, 0, 0),    # Red for 'leaf_miner'
+        3: (128, 0, 128),  # Purple for 'leaf rust'
+        4: (0, 128, 128),  # Teal for 'red_spider_mite'
+        5: (255, 255, 0)    # Purple for 'sooty mold'
     }
 
     # Sidebar
@@ -348,7 +350,7 @@ def main(theme_colors):
                 else:
                     if st.sidebar.button('Detect Objects'):
                         if detection_model_choice == 'Both Models':
-                            @st.experimental_dialog("Results")
+                            @st.dialog("Results")
                             def both_models():
                                 with st.spinner("Detecting objects. Please wait..."):
                                     time.sleep(0)
@@ -410,7 +412,7 @@ def main(theme_colors):
                             both_models()
 
                         else:
-                            @st.experimental_dialog("Result")
+                            @st.dialog("Result")
                             def single_model():
                                 with st.spinner("Detecting objects. Please wait..."):
                                     time.sleep(0)

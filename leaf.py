@@ -121,7 +121,7 @@ def main():
 
     clicked = click_detector(content)
 
-    @st.experimental_dialog('LEAF INFO 🍃', width="large")
+    @st.dialog('LEAF INFO 🍃', width="large")
     def info(name, name2, desc, image):
         cols = st.columns(2)
 
