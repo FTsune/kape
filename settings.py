@@ -24,5 +24,5 @@ DEFAULT_DETECT_IMAGE = IMAGES_DIR / 'DB2.png'
 
 # ML Model config
 MODEL_DIR = ROOT / 'weights'
-DISEASE_DETECTION_MODEL = MODEL_DIR / 'cdisease.pt'
+DISEASE_DETECTION_MODEL = MODEL_DIR / 'cdisease-old.pt'
 LEAF_DETECTION_MODEL = MODEL_DIR / 'cleaf.pt'

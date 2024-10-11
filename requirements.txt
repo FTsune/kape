@@ -102,7 +102,7 @@ tornado==6.4.1
 tqdm==4.66.4
 typing_extensions==4.12.2
 tzdata==2024.1
-ultralytics==8.2.60
+ultralytics==8.3.6
 ultralytics-thop==2.0.0
 urllib3==2.2.2
 validators==0.33.0

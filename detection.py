@@ -81,7 +81,8 @@ def main(theme_colors):
 
     # Sidebar theme selection
     with st.sidebar:
-        st.header("THEME")
+        st.header('THEME')
+        
         theme_option = st.selectbox(
             "Choose theme",
             options=["Light", "Dark"],
@@ -125,7 +126,7 @@ def main(theme_colors):
     """, unsafe_allow_html=True)
 
     warn.markdown(f"""<div style='background-color: transparent; border: 1px solid {primary_color}; border-radius: 10px;'>
-                    <p style='font-size: 12px; color: {primary_color}; margin: 0px 0px; padding: 10px;'>
+                    <p style='font-size: 0.8rem; color: {primary_color}; margin: 0px 0px; padding: 10px;'>
                     This feature is still in development and may cause unexpected behavior when used.</p>
                     </div>""",
                 unsafe_allow_html=True) 
@@ -138,13 +139,12 @@ def main(theme_colors):
     }
 
     cdisease_colors = {
-        0: (255, 165, 0),  # Orange for 'brown_eye_spot'
-        1: (255, 0, 255),  # Magenta for 'leaf_miner'
+        0: (255, 255, 0),  # Yellow for 'algae_growth'
+        1: (255, 165, 0),  # Orange for 'cercospora'
         2: (255, 0, 0),    # Red for 'leaf_rust'
-        3: (128, 0, 128)   # Purple for 'red_spider_mite'
+        3: (127, 0, 255)   # Violet for 'sooty_mold'
     }
 
-    # Sidebar
     st.sidebar.header("MODEL CONFIGURATION")
 
 
@@ -326,9 +326,9 @@ def main(theme_colors):
                     col2_placeholder = st.empty()
                     
                     with col2_placeholder.container():
-                        st.markdown(f"<p style='border-radius: 10px 10px 0px 0px; border: 1px solid; border-bottom: 0px; padding: 12px; font-weight: bold; font-size: 17px; color: {primary_color}'>INSTRUCTIONS</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p style='border-radius: 10px 10px 0px 0px; border: 1px solid; border-bottom: 0px; padding: 12px; font-weight: bold; font-size: 1.2rem; color: {primary_color}'>INSTRUCTIONS</p>", unsafe_allow_html=True)
                         st.markdown(f"""
-                            <p style='border-right: 1px solid {primary_color}; border-left: 1px solid {primary_color}; font-size: 14px; margin: -30px 0; padding: 12px; color: {text_color}'>
+                            <p style='border-right: 1px solid {primary_color}; border-left: 1px solid {primary_color}; font-size: 1rem; margin: -30px 0; padding: 12px; color: {text_color}'>
                                 Open the sidebar to start configuring.
                                 Upload a valid image file (jpeg, jpg, webp, png) and click "Detect Objects".
                                 Wait for a few seconds until it's done detecting objects.
@@ -338,8 +338,8 @@ def main(theme_colors):
                             </p>
                         """, unsafe_allow_html=True)
                         st.markdown(f"""
-                            <p style='border: 1px solid; border-top: 0px; font-size: 12px; color: {primary_color}; margin-top: 10px; padding: 10px; border-radius: 0 0 10px 10px'>
-                                Our model is currently optimized to detect diseases only in coffee leaves.
+                            <p style='border: 1px solid; border-top: 0px; font-size: 1rem; color: {primary_color}; margin-top: 10px; padding: 10px; border-radius: 0 0 10px 10px'>
+                                <br>Our model is currently optimized to detect diseases only in coffee leaves.
                             </p>
                         """, unsafe_allow_html=True)
                         
