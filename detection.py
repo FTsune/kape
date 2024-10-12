@@ -125,7 +125,7 @@ def main(theme_colors):
     """, unsafe_allow_html=True)
 
     warn.markdown(f"""<div style='background-color: transparent; border: 1px solid {primary_color}; border-radius: 10px;'>
-                    <p style='font-size: 12px; color: {primary_color}; margin: 0px 0px; padding: 10px;'>
+                    <p style='font-size: 0.9rem; color: {primary_color}; margin: 0px 0px; padding: 10px;'>
                     This feature is still in development and may cause unexpected behavior when used.</p>
                     </div>""",
                 unsafe_allow_html=True) 
@@ -328,9 +328,9 @@ def main(theme_colors):
                     col2_placeholder = st.empty()
                     
                     with col2_placeholder.container():
-                        st.markdown(f"<p style='border-radius: 10px 10px 0px 0px; border: 1px solid; border-bottom: 0px; padding: 12px; font-weight: bold; font-size: 17px; color: {primary_color}'>INSTRUCTIONS</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p style='border-radius: 10px 10px 0px 0px; border: 1px solid; border-bottom: 0px; padding: 12px; font-weight: bold; font-size: 1.35rem; color: {primary_color}'>INSTRUCTIONS</p>", unsafe_allow_html=True)
                         st.markdown(f"""
-                            <p style='border-right: 1px solid {primary_color}; border-left: 1px solid {primary_color}; font-size: 14px; margin: -30px 0; padding: 12px; color: {text_color}'>
+                            <p style='border-right: 1px solid {primary_color}; border-left: 1px solid {primary_color}; font-size: 1rem; margin: -30px 0; padding: 12px 12px 25px; color: {text_color}'>
                                 Open the sidebar to start configuring.
                                 Upload a valid image file (jpeg, jpg, webp, png) and click "Detect Objects".
                                 Wait for a few seconds until it's done detecting objects.
@@ -340,7 +340,7 @@ def main(theme_colors):
                             </p>
                         """, unsafe_allow_html=True)
                         st.markdown(f"""
-                            <p style='border: 1px solid; border-top: 0px; font-size: 12px; color: {primary_color}; margin-top: 10px; padding: 10px; border-radius: 0 0 10px 10px'>
+                            <p style='border: 1px solid; border-top: 0px; font-size: 1rem; color: {primary_color}; margin-top: 10px; padding: 10px; border-radius: 0 0 10px 10px'>
                                 Our model is currently optimized to detect diseases only in coffee leaves.
                             </p>
                         """, unsafe_allow_html=True)

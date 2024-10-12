@@ -48,7 +48,7 @@ menu_styles = {
     "container": {"padding": "0!important", "background-color": "transparent"},
     "icon": {"color": current_theme["primaryColor"], "font-size": "15px"},
     "nav-link": {
-        "font-size": "14px",
+        "font-size": "1rem",
         "text-align": "center",
         "text-shadow": "2px 2px 4px rgba(0, 0, 0, 0.2)",
         "margin": "0px",
