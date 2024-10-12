@@ -79,7 +79,7 @@ st-click-detector==0.1.3
 st-clickable-images==0.0.3
 st-pages==1.0.1
 st-theme==1.2.3
-streamlit==1.36.0
+streamlit==1.39.0
 streamlit-camera-input-live==0.2.0
 streamlit-card==1.0.2
 streamlit-embedcode==0.1.2
