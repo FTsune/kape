@@ -294,7 +294,7 @@ def main(theme_colors):
                 }}
                 """,
         ):
-            col1, col2 = st.columns(2)
+            col1, col2 = st.columns()
 
             with col1:
                 with st.container(border=True):

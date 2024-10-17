@@ -1,5 +1,5 @@
-# Coffee Leaf Classification and Disease Detection
-The Barako BAMA is a web application built using Streamlit. This app provides a user-friendly interface for detecting coffee leaf types and identifying diseases affecting them. Users can select from different models, adjust settings for detection, and view detailed information about various coffee leaves and diseases.
+# Barako BAMA
+The Barako BAMA (Brewed Analysis on Monitoring Ailment) is a web application built using Streamlit. This app provides a user-friendly interface for detecting coffee leaf types and identifying diseases affecting them. Users can select from different models, adjust settings for detection, and view detailed information about various coffee leaves and diseases.
 
 ## Table of Contents
 - [Features](#features)

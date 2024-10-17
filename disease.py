@@ -34,14 +34,15 @@ def main():
         text_color = "black"
         container_bg = "white"
 
+
     content = f"""
         <style>
         .container-header {{
-                    color: {primary_color}; 
-                    font-size: 35px; 
-                    font-weight: bold; 
-                    text-align: center;
-                    margin-bottom: 10px;
+            color: {primary_color}; 
+            font-size: 35px; 
+            font-weight: bold; 
+            text-align: center;
+            margin-bottom: 10px;
         }}        
         .image-wrapper {{
             background: {background_gradient};
@@ -51,18 +52,17 @@ def main():
             margin: auto;
         }}
         .image-grid {{
-            display: flex;
-            flex-wrap: wrap;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
             justify-content: center;
-            gap: 10px;
         }}
         .image-container {{
             position: relative;
             border-radius: 20px;
-            margin: 5px;
             overflow: hidden;
             width: 100%;
-            max-width: 400px;
             box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
             aspect-ratio: 21 / 5;
         }}
@@ -90,9 +90,17 @@ def main():
             text-align: center;
             width: 100%;
         }}
-        @media (max-width: 500px) {{
-            .image-container {{
-                max-width: 100%;
+        @media (max-width: 768px) {{
+            .image-grid {{
+                grid-template-columns: repeat(2, 1fr);
+            }}
+            .image-title {{
+                font-size: 20px;
+            }}
+        }}
+        @media (max-width: 630px) {{
+            .image-grid {{
+                grid-template-columns: 1fr;
             }}
         }}
         </style>
