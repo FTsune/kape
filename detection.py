@@ -138,11 +138,11 @@ def main(theme_colors):
     }
 
     cdisease_colors = {
-        0: (255, 165, 0),  # Orange for 'algal growth'
-        1: (255, 0, 255),  # Magenta for 'cercospora'
-        2: (255, 0, 0),    # Red for 'leaf_miner'
-        3: (128, 0, 128),  # Purple for 'leaf rust'
-        4: (0, 128, 128),  # Teal for 'red_spider_mite'
+        0: (0, 128, 128),  # Teal for 'abiotic disorder'
+        1: (255, 165, 0),  # Orange for 'algal growth'
+        2: (255, 0, 0),    # Red for 'cercospora'
+        3: (128, 0, 128),  # Purple for 'late stage rust'
+        4: (150, 75, 0),  # Magenta for 'rust'
         5: (255, 255, 0)    # Purple for 'sooty mold'
     }
 
@@ -288,7 +288,7 @@ def main(theme_colors):
                     background-color: {secondary_background_color};
                     border-radius: 10px;
                     padding: calc(1em - 1px);
-                    max-width: 1000px;
+                    max-width: 694px;
                     margin: auto;
                     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
                 }}
@@ -321,7 +321,7 @@ def main(theme_colors):
                         {{
                             background-color: {background_color};
                             border-radius: 10px;
-                            min-width: 100px;
+                            max-width: 694px;
                         }}
                         """,
                 ):

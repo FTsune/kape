@@ -19,13 +19,15 @@ THEME_COLORS = {
         "primaryColor": "#41B3A2",
         "backgroundColor": "white",
         "secondaryBackgroundColor": "#fafafa",
-        "textColor": "black"
+        "textColor": "black",
+        "logo": "images/logo_light.png"
     },
     "DARK": {
         "primaryColor": "#00fecd",
         "backgroundColor": "#111827",
         "secondaryBackgroundColor": "#141b2a",
-        "textColor": "white"
+        "textColor": "white",
+        "logo": "images/logo_dark.png"
     }
 }
 
@@ -42,6 +44,9 @@ def set_theme(is_dark_theme):
 
 # Set the current theme based on session state
 current_theme = set_theme(st.session_state.dark_theme)
+
+# Logo
+st.logo(current_theme["logo"], icon_image='images/icon.png', size='large')
 
 # Dynamic styles for option menu
 menu_styles = {
