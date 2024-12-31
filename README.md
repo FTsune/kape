@@ -1,5 +1,5 @@
-# Barako BAMA
-The Barako BAMA (Brewed Analysis on Monitoring Ailment) is a web application built using Streamlit. This app provides a user-friendly interface for detecting coffee leaf types and identifying diseases affecting them. Users can select from different models, adjust settings for detection, and view detailed information about various coffee leaves and diseases.
+# Brewguard
+The Brewguard is a web application built using Streamlit. This app provides a user-friendly interface for detecting coffee leaf types and identifying diseases affecting them. Users can select from different models, adjust settings for detection, and view detailed information about various coffee leaves and diseases.
 
 ## Table of Contents
 - [Features](#features)
@@ -17,9 +17,7 @@ The Barako BAMA (Brewed Analysis on Monitoring Ailment) is a web application bui
   - Robusta
     
 - **Disease Information**: Access details about various diseases affecting coffee plants.
-  - Cercospora
-  - Leaf Miner
   - Leaf Rust
-  - Lichens
-  - Red Spider Mite
-  - Sooty Mold
+  - Cercospora
+  - Algal Growth
+  - Sooty Molds
