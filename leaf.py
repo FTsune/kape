@@ -8,6 +8,9 @@ def image_to_base64(image_path):
         return f"data:image/jpeg;base64,{encoded}"
     
 def main():
+    # Determine if dark theme is active
+    is_dark_theme = st.session_state.get('dark_theme', False)
+
     image_paths = ["images/leaves/arabica2.jpg",
                    "images/leaves/liberica2.jpg",
                    "images/leaves/robusta.jpg"]
@@ -17,10 +20,29 @@ def main():
     titles = ['Arabica', 'Liberica', 'Robusta']
     sci_names = ['Coffea arabica', 'Coffea liberica', 'Coffea canephora']
 
+    # Define theme-specific colors
+    if is_dark_theme:
+        primary_color = "#00fecd"
+        background_gradient = "linear-gradient(#1a3c34, #00fecd, #1a3c34)"
+        text_color = "white"
+        container_bg = "#111827"
+    else:
+        primary_color = "#41B3A2"
+        background_gradient = "linear-gradient(135deg, #E7FBE6, #B2DFDB)"
+        text_color = "black"
+        container_bg = "white"
+
     content = f"""
     <style>
+    .container-header {{
+                color: {primary_color}; 
+                font-size: 35px; 
+                font-weight: bold; 
+                text-align: center;
+                margin-bottom: 10px;
+    }}
     .image-wrapper {{
-        background: linear-gradient(135deg, #E7FBE6, #B2DFDB);
+        background: {background_gradient};
         padding: 20px;
         border-radius: 20px;
         max-width: 90%;
@@ -87,6 +109,8 @@ def main():
     }}
     </style>
     <div class="image-wrapper">
+        <p class="container-header">LEAVES</p>
+        <hr style="margin-top: -10px; border: 1px solid {primary_color};">
         <div class="image-grid">
             <div class="image-container"><a href='#' id='Image 1'><img class='image-item' src='{images[0]}'><div class='image-title'>{titles[0]}</div><div class='image-subheader'>{sci_names[0]}</div></a></div>
             <div class="image-container"><a href='#' id='Image 2'><img class='image-item' src='{images[1]}'><div class='image-title'>{titles[1]}</div><div class='image-subheader'>{sci_names[1]}</div></a></div>
@@ -95,10 +119,9 @@ def main():
     </div>
     """
 
-
     clicked = click_detector(content)
 
-    @st.experimental_dialog('LEAF INFO 🍃', width="large")
+    @st.dialog('LEAF INFO 🍃', width="large")
     def info(name, name2, desc, image):
         cols = st.columns(2)
 
@@ -146,6 +169,15 @@ def main():
         '''
         info(name, name2, desc, img)
 
+    # Apply overall theme to Streamlit elements
+    st.markdown(f"""
+        <style>
+        .stApp {{
+            background-color: {container_bg};
+            color: {text_color};
+        }}
+        </style>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
