@@ -1,26 +1,138 @@
 import streamlit as st
 from pathlib import Path
 import PIL
+from PIL import Image
+from PIL.ExifTags import TAGS, GPSTAGS
 import cv2
-from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
 import numpy as np
 import time
 import settings
 import helper
 import uuid
+import json
+from datetime import datetime
+import os
 from streamlit_extras.stylable_container import stylable_container
+
+
+def ensure_logs_directory():
+    """Create logs directory if it doesn't exist"""
+    log_dir = Path("logs")
+    if not log_dir.exists():
+        log_dir.mkdir(parents=True)
+    return log_dir
+
+def save_location_data(image_name, gps_data):
+    """Save GPS location data to a JSON file"""
+    log_dir = ensure_logs_directory()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # Create a data entry with timestamp and GPS info
+    location_entry = {
+        "timestamp": timestamp,
+        "image_name": image_name,
+        "gps_data": gps_data
+    }
+    
+    # Load existing data if available
+    log_file = log_dir / "location_logs.json"
+    if log_file.exists():
+        with open(log_file, 'r') as f:
+            try:
+                existing_data = json.load(f)
+            except json.JSONDecodeError:
+                existing_data = []
+    else:
+        existing_data = []
+    
+    # Append new data
+    existing_data.append(location_entry)
+    
+    # Save updated data
+    with open(log_file, 'w') as f:
+        json.dump(existing_data, f, indent=4)
+    
+    return log_file
+
+def get_decimal_coordinates(gps_coords):
+    """Convert GPS coordinates from degrees/minutes/seconds to decimal degrees"""
+    degrees = float(gps_coords[0])
+    minutes = float(gps_coords[1])
+    seconds = float(gps_coords[2])
+    
+    decimal_degrees = degrees + minutes/60 + seconds/3600
+    return decimal_degrees
+
+def get_gps_location(image):
+    """Extract GPS information from image metadata"""
+    try:
+        # Open the image
+        if isinstance(image, (str, Path)):
+            img = Image.open(image)
+        else:
+            img = Image.open(image)
+            
+        # Extract EXIF data
+        exif = img._getexif()
+        
+        if not exif:
+            return None
+            
+        gps_info = {}
+        
+        # Find the GPS info tag
+        for tag_id in exif:
+            tag = TAGS.get(tag_id, tag_id)
+            data = exif[tag_id]
+            
+            if tag == "GPSInfo":
+                for t in data:
+                    sub_tag = GPSTAGS.get(t, t)
+                    gps_info[sub_tag] = data[t]
+                    
+        if not gps_info:
+            return None
+            
+        # Extract coordinates
+        try:
+            lat_dms = gps_info.get('GPSLatitude')
+            lon_dms = gps_info.get('GPSLongitude')
+            lat_ref = gps_info.get('GPSLatitudeRef')
+            lon_ref = gps_info.get('GPSLongitudeRef')
+            
+            if lat_dms and lon_dms and lat_ref and lon_ref:
+                lat = get_decimal_coordinates(lat_dms)
+                lon = get_decimal_coordinates(lon_dms)
+                
+                if lat_ref == 'S':
+                    lat = -lat
+                if lon_ref == 'W':
+                    lon = -lon
+                    
+                return {
+                    'latitude': lat,
+                    'longitude': lon,
+                    'altitude': gps_info.get('GPSAltitude', None)
+                }
+        except Exception as e:
+            st.warning(f"Error processing GPS coordinates: {str(e)}")
+            return None
+            
+    except Exception as e:
+        st.warning(f"Error reading image metadata: {str(e)}")
+        return None
+    
+    return None
+
 
 def run_live_detection(model, leaf_colors, disease_colors):
     st.title("Live Detection")
     video_placeholder = st.empty()
     cap = cv2.VideoCapture(0)
-<<<<<<< HEAD
-=======
     
     if not cap.isOpened():
         st.error("No camera detected. Please check your camera connection.")
         return
->>>>>>> upstream/main
 
     while True:
         if not st.session_state.get('enable_live_detection', False):
@@ -54,24 +166,8 @@ def run_live_detection(model, leaf_colors, disease_colors):
 
     cap.release()
 
-<<<<<<< HEAD
-def main():
-    cleaf_colors = {
-        0: (0, 255, 0),
-        1: (0, 255, 255),
-        2: (0, 0, 255)
-    }
-
-    cdisease_colors = {
-        0: (255, 165, 0),
-        1: (255, 0, 255),
-        2: (255, 0, 0),
-        3: (128, 0, 128)
-    }
-
-    st.sidebar.header("DL MODEL CONFIGURATION")
-=======
-def format_detection_results(boxes, labels):
+def format_detection_results(boxes, labels, gps_data=None):
+    """Format detection results including GPS data if available"""
     predictions = []
     for box in boxes:
         x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -93,7 +189,21 @@ def format_detection_results(boxes, labels):
         }
         predictions.append(prediction)
     
-    return {"predictions": predictions}
+    # Create the full result dictionary
+    result = {
+        "predictions": predictions
+    }
+    
+    # Add GPS data if available
+    if gps_data:
+        result["location"] = {
+            "latitude": round(gps_data['latitude'], 6),
+            "longitude": round(gps_data['longitude'], 6)
+        }
+        if gps_data.get('altitude'):
+            result["location"]["altitude"] = round(float(gps_data['altitude']), 1)
+    
+    return result
 
 def main(theme_colors):
     # Initialize session state for theme if not already set
@@ -169,23 +279,28 @@ def main(theme_colors):
 
     # Sidebar
     st.sidebar.header("MODEL CONFIGURATION")
->>>>>>> upstream/main
 
+
+    # Model Selection
     with st.sidebar:
         detection_model_choice = st.selectbox(
-            "Select Detection Model",
-            ("Disease", "Leaf", "Both Models"),
-            index=0
-        )
-
+                                    "Select Detection Model",
+                                    ("Disease", "Leaf", "Both Models"),
+                                    index=0,
+                                    placeholder="Choose a model..."
+                                )
         adv_opt = st.toggle("Advanced Options")
 
         if adv_opt:
             confidence = float(st.sidebar.slider("Select Model Confidence", 
-                25, 100, 40)) / 100
+                                                25, 100, 40,
+                                                help="A higher value means the model will only make predictions when it is more certain, which can reduce false positives but might also increase the number of 'unsure' results.")) / 100
 
-            overlap_threshold = float(st.sidebar.slider("Select Overlap Threshold", 0, 100, 30)) / 100
+            # New slider for overlap threshold
+            overlap_threshold = float(st.sidebar.slider("Select Overlap Threshold", 0, 100, 30,
+                                                        help="A higher threshold means the model will require more overlap between detected regions to consider them as distinct, which can help reduce false positives but may also miss some overlapping objects.")) / 100
 
+    # Selecting Detection Model and setting model path
     model = None
     model_path = None
     
@@ -205,28 +320,6 @@ def main(theme_colors):
 
     if 'enable_live_detection' not in st.session_state:
         st.session_state.enable_live_detection = False
-<<<<<<< HEAD
-
-    enable_live_detection = st.sidebar.checkbox(
-        "Enable Live Detection", 
-        value=st.session_state.enable_live_detection,
-        key='live_detection_checkbox'
-    )
-
-    if enable_live_detection != st.session_state.enable_live_detection:
-        st.session_state.enable_live_detection = enable_live_detection
-        st.experimental_rerun()
-
-    if st.session_state.enable_live_detection:
-        if detection_model_choice == 'Both Models':
-            st.error("Live detection is not supported with 'Both Models' option. Please select either 'Disease' or 'Leaf' model.")
-        else:
-            run_live_detection(model, cleaf_colors, cdisease_colors)
-
-    st.sidebar.divider()   
-    st.sidebar.header("TRY ME")
-=======
->>>>>>> upstream/main
 
     enable_live_detection = st.sidebar.checkbox(
         "Enable Live Detection", 
@@ -235,27 +328,6 @@ def main(theme_colors):
         help='Enable live detection to receive real-time analysis and alerts for coffee leaf type and disease.'
     )
 
-<<<<<<< HEAD
-    def draw_bounding_boxes(image, boxes, labels, colors):
-        res_image = np.array(image)
-        height, width, _ = res_image.shape
-
-        for box in boxes:
-            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
-            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-            label_idx = int(box.cls)
-            confidence = float(box.conf)
-            label = f"{labels[label_idx]}: {confidence:.2f}"
-
-            color = colors[label_idx]
-
-            font_scale = max(0.6, min(width, height) / 600)
-            font_thickness = max(2, min(width, height) // 250)
-            box_thickness = max(3, min(width, height) // 200)
-
-            cv2.rectangle(res_image, (x1, y1), (x2, y2), color=color, thickness=box_thickness)
-            cv2.putText(res_image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
-=======
     if enable_live_detection != st.session_state.enable_live_detection:
         st.session_state.enable_live_detection = enable_live_detection
         st.rerun()
@@ -284,7 +356,6 @@ def main(theme_colors):
                 label_idx = int(box.cls)
                 confidence = float(box.conf)
                 label = f"{labels[label_idx]}: {confidence:.2f}"
->>>>>>> upstream/main
 
                 # Determine color based on class
                 color = colors[label_idx]
@@ -370,6 +441,40 @@ def main(theme_colors):
                             uploaded_image = PIL.Image.open(source_img)
                             image_placeholder.image(source_img, caption="Uploaded Image",
                                     use_column_width=True)
+                            
+                            # Add GPS metadata extraction
+                            gps_data = get_gps_location(source_img)
+                            if gps_data:
+                                with st.expander("Image Location Data"):
+                                    st.write("GPS Coordinates:")
+                                    st.write(f"Latitude: {gps_data['latitude']:.6f}°")
+                                    st.write(f"Longitude: {gps_data['longitude']:.6f}°")
+                                    if gps_data['altitude']:
+                                        st.write(f"Altitude: {float(gps_data['altitude']):.1f}m")
+                                    
+                                    # Save location data
+                                    log_file = save_location_data(source_img.name, gps_data)
+                                    st.success(f"Location data saved to {log_file}")
+                                    
+                                    # Optional: Add a map
+                                    st.map({
+                                        'lat': [gps_data['latitude']],
+                                        'lon': [gps_data['longitude']]
+                                    })
+                                    
+                                    # Add button to view saved locations
+                                    if st.button("View All Saved Locations"):
+                                        try:
+                                            with open(log_file, 'r') as f:
+                                                saved_data = json.load(f)
+                                                st.json(saved_data)
+                                        except FileNotFoundError:
+                                            st.warning("No location history found.")
+                                        except json.JSONDecodeError:
+                                            st.error("Error reading location history.")
+                            else:
+                                st.info("No GPS data found in the image.")
+                                
                     except Exception as ex:
                         st.error("Error occurred while opening the image.")
                         st.error(ex)
@@ -397,6 +502,8 @@ def main(theme_colors):
                                 <br><br>
                                 Ensure that the photo clearly shows a coffee leaf. Avoid bluriness and make
                                 sure the leaf is the main focus of the image. 
+                                <br><br>
+                                If your image contains GPS data, it will be automatically extracted and saved.
                             </p>
                         """, unsafe_allow_html=True)
                         st.markdown(f"""
@@ -416,33 +523,26 @@ def main(theme_colors):
                                     time.sleep(0)
 
                                     start_time = time.time()
-                                # Use both models for detection
+                                    
+                                    # Get GPS data first
+                                    gps_data = get_gps_location(source_img)
+                                    
                                     if adv_opt:
                                         res_disease = model_disease.predict(uploaded_image, conf=confidence)
                                         res_leaf = model_leaf.predict(uploaded_image, conf=confidence)
 
-                                        # Apply non-max suppression
                                         disease_boxes = non_max_suppression(res_disease[0].boxes, overlap_threshold)
                                         leaf_boxes = non_max_suppression(res_leaf[0].boxes, overlap_threshold)
-
                                     else:
                                         res_disease = model_disease.predict(uploaded_image, conf=.4)
                                         res_leaf = model_leaf.predict(uploaded_image, conf=.4)
 
-                                        # Apply non-max suppression
                                         disease_boxes = non_max_suppression(res_disease[0].boxes, .3)
                                         leaf_boxes = non_max_suppression(res_leaf[0].boxes, .3)
 
-                                    # Merge the labels by converting them to dictionaries and concatenating
                                     combined_labels = {**res_disease[0].names, **res_leaf[0].names}
-
-                                    # Create a combined image with both model detections
                                     res_combined = np.array(uploaded_image)
-
-                                    # Draw disease boxes
                                     res_combined = draw_bounding_boxes(res_combined, disease_boxes, res_disease[0].names, cdisease_colors)
-
-                                    # Draw leaf boxes
                                     res_combined = draw_bounding_boxes(res_combined, leaf_boxes, res_leaf[0].names, cleaf_colors)
                                         
                                     with st.container(border=True):
@@ -456,21 +556,17 @@ def main(theme_colors):
 
                                     def res():
                                         st.write("Disease Detection Results:")
-                                        disease_results = format_detection_results(disease_boxes, res_disease[0].names)
+                                        disease_results = format_detection_results(disease_boxes, res_disease[0].names, gps_data)
                                         st.json(disease_results)
 
                                         st.write("Leaf Detection Results:")
-                                        leaf_results = format_detection_results(leaf_boxes, res_leaf[0].names)
+                                        leaf_results = format_detection_results(leaf_boxes, res_leaf[0].names, gps_data)
                                         st.json(leaf_results)
 
                                     with st.popover("Advanced Detection Results"):
                                         res()
-
-                                    # with col2_placeholder.expander("Combined Detection Results"):
-                                    #     res()
-                                    
+                                
                             both_models()
-
                         else:
                             @st.dialog("Result")
                             def single_model():
@@ -478,23 +574,24 @@ def main(theme_colors):
                                     time.sleep(0)
 
                                     start_time = time.time()
-                                    # Single model prediction
+                                    
+                                    # Get GPS data first
+                                    gps_data = get_gps_location(source_img)
+                                    
                                     if adv_opt:
                                         res = model.predict(uploaded_image, conf=confidence)
                                         boxes = non_max_suppression(res[0].boxes, overlap_threshold)
-                                        
                                     else:
                                         res = model.predict(uploaded_image, conf=.4)
-                                        boxes = non_max_suppression(res[0].boxes, .3)                                    
+                                        boxes = non_max_suppression(res[0].boxes, .3)
+                                    
                                     labels = res[0].names
 
-                                    # Choose the appropriate color map based on the model
                                     if detection_model_choice == 'Disease':
                                         colors = cdisease_colors
                                     else:
                                         colors = cleaf_colors
 
-                                    # Draw the bounding boxes
                                     res_plotted = draw_bounding_boxes(uploaded_image, boxes, labels, colors)
                                         
                                     with st.container(border=True):
@@ -508,13 +605,12 @@ def main(theme_colors):
 
                                     try:
                                         with st.popover("Advanced Detection Results"):
-                                            results = format_detection_results(boxes, labels)
+                                            results = format_detection_results(boxes, labels, gps_data)
                                             st.json(results)
                                     except Exception as ex:
                                         st.write("No image is uploaded yet!")
                                 
                             single_model()
-
 if __name__ == '__main__':
     # This will be called when running detection.py directly
     # You can set default colors here for testing
