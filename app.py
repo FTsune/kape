@@ -1,16 +1,15 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
+from streamlit_extras.stylable_container import stylable_container
 import leaf
 import disease
 import detection
+import disease_tracking  # New import
 import team
 
 # Setting page layout
 st.set_page_config(
-    page_title="BrewGuard",
-    page_icon="🍃",
-    layout="wide",
-    initial_sidebar_state="auto"
+    page_title="BrewGuard", page_icon="🍃", layout="wide", initial_sidebar_state="auto"
 )
 
 # Define color schemes
@@ -20,33 +19,54 @@ THEME_COLORS = {
         "backgroundColor": "white",
         "secondaryBackgroundColor": "#fafafa",
         "textColor": "black",
-        "logo": "images/logo_light.png"
+        "logo": "images/logo_light.png",
     },
     "DARK": {
         "primaryColor": "#00fecd",
         "backgroundColor": "#111827",
         "secondaryBackgroundColor": "#141b2a",
         "textColor": "white",
-        "logo": "images/logo_dark.png"
-    }
+        "logo": "images/logo_dark.png",
+    },
 }
 
 # Initialize session state for theme if not already set
-if 'dark_theme' not in st.session_state:
+if "dark_theme" not in st.session_state:
     st.session_state.dark_theme = False
 
-# Function to set theme
-def set_theme(is_dark_theme):
-    theme = THEME_COLORS["DARK"] if is_dark_theme else THEME_COLORS["LIGHT"]
-    for key, value in theme.items():
-        st.config.set_option(f"theme.{key}", value)
-    return theme
+
+# Function to get the current theme
+def get_theme(is_dark_theme):
+    return THEME_COLORS["DARK"] if is_dark_theme else THEME_COLORS["LIGHT"]
+
 
 # Set the current theme based on session state
-current_theme = set_theme(st.session_state.dark_theme)
+current_theme = get_theme(st.session_state.dark_theme)
 
-# Logo
-st.logo(current_theme["logo"], icon_image='images/icon.png', size='large')
+# Apply theme using custom CSS
+st.markdown(
+    f"""
+    <style>
+        :root {{
+            --primary-color: {current_theme["primaryColor"]};
+            --background-color: {current_theme["backgroundColor"]};
+            --secondary-background-color: {current_theme["secondaryBackgroundColor"]};
+            --text-color: {current_theme["textColor"]};
+        }}
+        .stApp {{
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }}
+        .sidebar .sidebar-content {{
+            background-color: var(--secondary-background-color);
+        }}
+    </style>
+""",
+    unsafe_allow_html=True,
+)
+
+# Display the logo using st.image
+st.sidebar.image(current_theme["logo"], use_column_width=True)
 
 # Dynamic styles for option menu
 menu_styles = {
@@ -59,38 +79,43 @@ menu_styles = {
         "margin": "0px",
         "--hover-color": current_theme["secondaryBackgroundColor"],
         "font-family": "'Arial', 'sans-serif'",
-        "color": current_theme["textColor"]
+        "color": current_theme["textColor"],
     },
     "nav-link-selected": {
         "color": current_theme["primaryColor"],
         "font-weight": "normal",
         "background-color": "transparent",
-        "border-radius": "0px"
-    }
+        "border-radius": "0px",
+    },
 }
 
-# Navigation menu
-tab = option_menu(
-    None,
-    ["Home", "Leaf", "Disease", 'Team'],
-    icons=['house', 'feather', "virus", 'people'],
-    menu_icon="cast",
-    default_index=0,
-    orientation="horizontal",
-    styles=menu_styles
-)
+# Navigation menu wrapped in stylable container
+with stylable_container(
+    key="menu_container",
+    css_styles=f"""
+        background-color: {current_theme["backgroundColor"]};
+        padding: 1rem;
+        border-radius: 0.5rem;
+    """,
+):
+    tab = option_menu(
+        None,
+        ["Home", "Leaf", "Disease", "Tracking", "Team"],  # Added "Tracking"
+        icons=["house", "feather", "virus", "map", "people"],  # Added map icon
+        menu_icon="cast",
+        default_index=0,
+        orientation="horizontal",
+        styles=menu_styles,
+    )
 
 # Content rendering based on selected tab
-if tab == 'Home':
+if tab == "Home":
     detection.main(THEME_COLORS)
-elif tab == 'Leaf':
+elif tab == "Leaf":
     leaf.main()
-elif tab == 'Disease':
+elif tab == "Disease":
     disease.main()
-elif tab == 'Team':
+elif tab == "Tracking":  # New tracking tab
+    disease_tracking.main(THEME_COLORS)
+elif tab == "Team":
     team.main(THEME_COLORS)
-
-# Force a rerun if the theme has changed
-if 'previous_theme' not in st.session_state or st.session_state.previous_theme != st.session_state.dark_theme:
-    st.session_state.previous_theme = st.session_state.dark_theme
-    st.rerun()
