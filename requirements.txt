@@ -114,3 +114,4 @@ gspread
 oauth2client
 streamlit-extras
 pydeck
+piexif
