@@ -8,7 +8,7 @@ SCOPES = [
 ]
 
 # Path to your service account credentials JSON file (Upload it to your project)
-CREDENTIALS_FILE = "coffeediseasedb-e3243bda8356.json"
+CREDENTIALS_FILE = "coffeediseasedb-1ef5f42ae808.json"
 
 # Google Sheet name
 SHEET_NAME = "CoffeeDiseaseData"
@@ -49,15 +49,16 @@ def get_or_create_worksheet():
     return worksheet
 
 
-def save_detection_to_database(disease_name, confidence, gps_data):
-    """Save disease detection results and GPS data to Google Sheets."""
+def save_detection_to_database(disease_name, confidence, gps_data, date_taken):
+    """Save disease detection results and GPS data to Google Sheets, but don't add timestamp if missing."""
     worksheet = get_or_create_worksheet()
+
+    # Format date taken if available, otherwise leave it blank
+    formatted_date = date_taken.strftime("%Y-%m-%d") if date_taken else ""
 
     # Create an entry
     entry = [
-        gspread.utils.rowcol_to_a1(
-            worksheet.row_count + 1, 1
-        ),  # Auto-increment timestamp
+        formatted_date,  # Either actual image taken time or blank
         disease_name,
         confidence,
         gps_data.get("latitude", "N/A"),
@@ -65,7 +66,7 @@ def save_detection_to_database(disease_name, confidence, gps_data):
         gps_data.get("altitude", "N/A"),
     ]
 
-    # Append data
+    # Append data to Google Sheets
     worksheet.append_row(entry)
 
     return "Data saved successfully!"

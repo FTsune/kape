@@ -187,17 +187,23 @@ def main(theme_colors):
 
             st.image(result_image, caption="Detected Image", use_column_width=True)
 
-            # Save detected diseases to Google Sheets
+            saved_any_detections = False  # Track if anything was saved
+
             for box in boxes:
                 class_id = int(box.cls[0])
-                confidence = round(float(box.conf[0]), 3)
+                confidence = round(float(box.conf[0]) * 100, 1)  # Convert to percentage
                 disease_name = labels[class_id]
 
-                # Save detection result with GPS data
-                response = save_location_data(
-                    source_img.name, disease_name, confidence, gps_data
-                )
-                st.success(response)
+                # ✅ Only save detections with confidence > 50%
+                if confidence > 50:
+                    save_location_data(source_img, disease_name, confidence, gps_data)
+                    saved_any_detections = (
+                        True  # Mark that we saved at least one detection
+                    )
+
+            # ✅ Show success message only once, if any detections were saved
+            if saved_any_detections:
+                st.success("✅ Data saved successfully!")
 
 
 if __name__ == "__main__":
