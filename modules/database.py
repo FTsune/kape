@@ -1,5 +1,7 @@
 import gspread
+import streamlit as st
 from oauth2client.service_account import ServiceAccountCredentials
+import json
 
 # Define the scope for Google Sheets API
 SCOPES = [
@@ -15,8 +17,9 @@ SHEET_NAME = "CoffeeDiseaseData"
 
 
 def authenticate_google_sheets():
-    """Authenticate with Google Sheets API using service account credentials."""
-    creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, SCOPES)
+    """Authenticate with Google Sheets API using service account credentials from Streamlit Secrets."""
+    credentials_dict = st.secrets["gcp_service_account"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, SCOPES)
     client = gspread.authorize(creds)
     return client
 
