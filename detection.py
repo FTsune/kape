@@ -106,7 +106,7 @@ def main(theme_colors):
         placeholder="Choose a model...",
     )
 
-    adv_opt = st.toggle("Advanced Options")
+    adv_opt = st.sidebar.toggle("Advanced Options")
 
     if adv_opt:
         confidence = (
@@ -120,9 +120,73 @@ def main(theme_colors):
         "Choose an image...", type=("jpg", "jpeg", "png", "bmp", "webp")
     )
 
+    with stylable_container(
+            key="container_with_border",
+            css_styles=f"""
+                {{
+                    background-color: {secondary_background_color};
+                    border-radius: 10px;
+                    padding: calc(1em - 1px);
+                    max-width: 694px;
+                    margin: auto;
+                    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+                }}
+                """,
+        ):
+            col1, col2 = st.columns(2)
+
+            with col1:
+                with st.container(border=True):
+                    image_placeholder = st.empty()
+
+                    try:
+                        if source_img is None:
+                            default_image_path = str(settings.DEFAULT_DETECT_IMAGE)
+                            default_image = PIL.Image.open(default_image_path)
+                            image_placeholder.image(default_image_path, caption="Sample Image: Objects Detected",
+                                    use_column_width=True)
+                        else:
+                            uploaded_image = PIL.Image.open(source_img)
+                            image_placeholder.image(source_img, caption="Uploaded Image",
+                                    use_column_width=True)
+                    except Exception as ex:
+                        st.error("Error occurred while opening the image.")
+                        st.error(ex)
+
+            with col2:
+                with stylable_container(
+                    key="container_with_border1",
+                    css_styles=f"""
+                        {{
+                            background-color: {background_color};
+                            border-radius: 10px;
+                            max-width: 694px;
+                        }}
+                        """,
+                ):
+                    col2_placeholder = st.empty()
+                    
+                    with col2_placeholder.container():
+                        st.markdown(f"<p style='border-radius: 10px 10px 0px 0px; border: 1px solid; border-bottom: 0px; padding: 12px; font-weight: bold; font-size: 1.35rem; color: {primary_color}'>INSTRUCTIONS</p>", unsafe_allow_html=True)
+                        st.markdown(f"""
+                            <p style='border-right: 1px solid {primary_color}; border-left: 1px solid {primary_color}; font-size: 1rem; margin: -30px 0; padding: 12px 12px 25px; color: {text_color}'>
+                                Open the sidebar to start configuring.
+                                Upload a valid image file (jpeg, jpg, webp, png) and click "Detect Objects".
+                                Wait for a few seconds until it's done detecting objects.
+                                <br><br>
+                                Ensure that the photo clearly shows a coffee leaf. Avoid bluriness and make
+                                sure the leaf is the main focus of the image. 
+                            </p>
+                        """, unsafe_allow_html=True)
+                        st.markdown(f"""
+                            <p style='border: 1px solid; border-top: 0px; font-size: 1rem; color: {primary_color}; margin-top: 10px; padding: 10px; border-radius: 0 0 10px 10px'>
+                                Our model is currently optimized to detect diseases only in coffee leaves.
+                            </p>
+                        """, unsafe_allow_html=True)
+
     if source_img:
         uploaded_image = PIL.Image.open(source_img)
-        image_placeholder = st.image(
+        image_placeholder.image(
             uploaded_image, caption="Uploaded Image", use_column_width=True
         )
 
@@ -139,7 +203,7 @@ def main(theme_colors):
                 st.map({"lat": [gps_data["latitude"]], "lon": [gps_data["longitude"]]})
 
         if st.sidebar.button("Detect Objects"):
-            st.write("Processing...")
+            # st.write("Processing...")
 
             # Load model based on selection
             try:
@@ -162,48 +226,86 @@ def main(theme_colors):
 
             if detection_model_choice == "Both Models":
                 # Run both models
-                res_disease = model_disease.predict(uploaded_image, conf=0.4)
-                res_leaf = model_leaf.predict(uploaded_image, conf=0.4)
+                @st.dialog('Results')
+                def both_models():
+                    res_disease = model_disease.predict(uploaded_image, conf=0.4)
+                    res_leaf = model_leaf.predict(uploaded_image, conf=0.4)
 
-                disease_boxes = non_max_suppression(res_disease[0].boxes, 0.3)
-                leaf_boxes = non_max_suppression(res_leaf[0].boxes, 0.3)
+                    disease_boxes = non_max_suppression(res_disease[0].boxes, 0.3)
+                    leaf_boxes = non_max_suppression(res_leaf[0].boxes, 0.3)
 
-                result_image = np.array(uploaded_image)
-                result_image = draw_bounding_boxes(
-                    result_image, disease_boxes, res_disease[0].names, cdisease_colors
-                )
-                result_image = draw_bounding_boxes(
-                    result_image, leaf_boxes, res_leaf[0].names, cleaf_colors
-                )
+                    result_image = np.array(uploaded_image)
+                    result_image = draw_bounding_boxes(
+                        result_image, disease_boxes, res_disease[0].names, cdisease_colors
+                    )
+                    result_image = draw_bounding_boxes(
+                        result_image, leaf_boxes, res_leaf[0].names, cleaf_colors
+                    )
+                    st.image(result_image, caption="Detected Image", use_column_width=True)
+
+                    saved_any_detections = False  # Track if anything was saved
+                    
+                    # Add code to save detections similar to the other branch
+                    # For disease detections
+                    for box in disease_boxes:
+                        class_id = int(box.cls[0])
+                        confidence = round(float(box.conf[0]) * 100, 1)
+                        disease_name = res_disease[0].names[class_id]
+                        
+                        if confidence > 50:
+                            save_location_data(source_img, disease_name, confidence, gps_data)
+                            saved_any_detections = True
+                    
+                    # For leaf detections
+                    for box in leaf_boxes:
+                        class_id = int(box.cls[0])
+                        confidence = round(float(box.conf[0]) * 100, 1)
+                        leaf_name = res_leaf[0].names[class_id]
+                        
+                        if confidence > 50:
+                            save_location_data(source_img, leaf_name, confidence, gps_data)
+                            saved_any_detections = True
+                    
+                    # Show success message if any detections were saved
+                    if saved_any_detections:
+                        st.success("✅ Data saved successfully!")
+                        
+                both_models()  # Fixed: Added parentheses to call the function
 
             else:
                 # Run selected model
-                res = model.predict(uploaded_image, conf=0.4)
-                boxes = non_max_suppression(res[0].boxes, 0.3)
-                labels = res[0].names
-                result_image = draw_bounding_boxes(
-                    uploaded_image, boxes, labels, colors
-                )
-
-            st.image(result_image, caption="Detected Image", use_column_width=True)
-
-            saved_any_detections = False  # Track if anything was saved
-
-            for box in boxes:
-                class_id = int(box.cls[0])
-                confidence = round(float(box.conf[0]) * 100, 1)  # Convert to percentage
-                disease_name = labels[class_id]
-
-                # ✅ Only save detections with confidence > 50%
-                if confidence > 50:
-                    save_location_data(source_img, disease_name, confidence, gps_data)
-                    saved_any_detections = (
-                        True  # Mark that we saved at least one detection
+                @st.dialog('Results')
+                def run_model():
+                    res = model.predict(uploaded_image, conf=0.4)
+                    boxes = non_max_suppression(res[0].boxes, 0.3)
+                    labels = res[0].names
+                    
+                    # Convert to numpy array if it's not already (for consistency)
+                    result_image = np.array(uploaded_image)
+                    result_image = draw_bounding_boxes(
+                        result_image, boxes, labels, colors
                     )
+                    st.image(result_image, caption="Detected Image", use_column_width=True)
 
-            # ✅ Show success message only once, if any detections were saved
-            if saved_any_detections:
-                st.success("✅ Data saved successfully!")
+                    saved_any_detections = False  # Track if anything was saved
+
+                    for box in boxes:
+                        class_id = int(box.cls[0])
+                        confidence = round(float(box.conf[0]) * 100, 1)  # Convert to percentage
+                        disease_name = labels[class_id]
+
+                        # ✅ Only save detections with confidence > 50%
+                        if confidence > 50:
+                            save_location_data(source_img, disease_name, confidence, gps_data)
+                            saved_any_detections = True  # Mark that we saved at least one detection
+
+                    # ✅ Show success message only once, if any detections were saved
+                    if saved_any_detections:
+                        st.success("✅ Data saved successfully!")
+                        
+                run_model()  # This function call looks good
+
+
 
 
 if __name__ == "__main__":

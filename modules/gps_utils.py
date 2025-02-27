@@ -109,11 +109,15 @@ def get_gps_location(image):
 def get_image_taken_time(image_file):
     """Extract the 'Date Taken' (DateTimeOriginal) from EXIF metadata, if available."""
     try:
-        # Open the image correctly using Streamlit's uploaded file object
         img = Image.open(image_file)
 
+        # Check if EXIF data exists
+        exif_data_bytes = img.info.get("exif", None)
+        if not exif_data_bytes:
+            return None  # No EXIF data available
+
         # Load EXIF data using piexif
-        exif_data = piexif.load(img.info.get("exif", b""))
+        exif_data = piexif.load(exif_data_bytes)
 
         # Extract DateTimeOriginal (Date Taken)
         date_taken = exif_data.get("Exif", {}).get(piexif.ExifIFD.DateTimeOriginal)

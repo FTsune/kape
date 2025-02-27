@@ -66,7 +66,7 @@ st.markdown(
 )
 
 # Display the logo using st.image
-st.sidebar.image(current_theme["logo"], use_column_width=True)
+st.logo(current_theme["logo"], size='large')
 
 # Dynamic styles for option menu
 menu_styles = {
