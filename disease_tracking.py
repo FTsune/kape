@@ -1,134 +1,116 @@
 import streamlit as st
 import pandas as pd
-import pydeck as pdk
+import plotly.express as px
 from modules.database import fetch_all_locations  # Fetch data from Google Sheets
 
-# Define colors for different diseases (RGB format)
+# Define colors for different diseases (Hex format for Plotly)
 DISEASE_COLORS = {
-    "rust": [255, 0, 0],  # Red
-    "cercospora": [0, 255, 0],  # Green
-    "algal-growth": [0, 0, 255],  # Blue
-    "sooty-mold": [255, 165, 0],  # Orange
-    "late-stage-rust": [128, 0, 128],  # Purple
-    "abiotic-disorder": [0, 128, 128],  # Teal
+    "rust": "#FF0000",  # Red
+    "cercospora": "#00FF00",  # Green
+    "algal-growth": "#0000FF",  # Blue
+    "sooty-mold": "#FFA500",  # Orange
+    "late-stage-rust": "#800080",  # Purple
+    "abiotic-disorder": "#008080",  # Teal
 }
 
-
-def main(theme_colors):
+def main(theme_colors=None):
     st.title("🌍 Disease Tracking Map")
-    cols = st.columns([0.7,0.3])
-    with cols[0]:
+    
+    # Fetch data from Google Sheets
+    locations = fetch_all_locations()
+
+    if not locations or len(locations) == 0:
+        st.warning("No disease detection data available.")
+        return
+
+    # Convert to DataFrame
+    df = pd.DataFrame(locations)
+
+    # Clean column names (remove spaces & convert to lowercase)
+    df.columns = [col.strip().lower() for col in df.columns]
+
+    # Ensure required columns exist
+    required_columns = ["disease detected", "confidence", "latitude", "longitude"]
+    if not all(col in df.columns for col in required_columns):
+        st.error("Invalid data format in Google Sheets. Please check column names.")
+        st.write("Found columns:", df.columns.tolist())  # Debugging output
+        return
+
+    # Convert Latitude & Longitude to float
+    df["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
+    df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
+
+    # Create two columns layout
+    col1, col2 = st.columns([0.7, 0.3])
+    
+    with col2:
+        # Sidebar filters (now in the right column)
         with st.container(border=True):
-            # Fetch data from Google Sheets
-            locations = fetch_all_locations()
-
-            if not locations or len(locations) == 0:
-                st.warning("No disease detection data available.")
-                return
-
-            # Convert to DataFrame
-            df = pd.DataFrame(locations)
-
-            # Clean column names (remove spaces & convert to lowercase)
-            df.columns = [col.strip().lower() for col in df.columns]
-
-            # Ensure required columns exist
-            required_columns = ["disease detected", "confidence", "latitude", "longitude"]
-            if not all(col in df.columns for col in required_columns):
-                st.error("Invalid data format in Google Sheets. Please check column names.")
-                st.write("Found columns:", df.columns.tolist())  # Debugging output
-                return
-
-            # Convert Latitude & Longitude to float
-            df["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
-            df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
-
-            # Sidebar filters
-            st.sidebar.header("Filter Options")
-            disease_filter = st.sidebar.selectbox(
+            st.subheader("Filter Options")
+            disease_filter = st.selectbox(
                 "Select Disease Type", ["All"] + sorted(df["disease detected"].unique())
             )
-
+            
+            filtered_df = df.copy()
             if disease_filter != "All":
-                df = df[df["disease detected"] == disease_filter]
+                filtered_df = filtered_df[filtered_df["disease detected"] == disease_filter]
 
-            # Assign colors to each disease
-            df["color"] = df["disease detected"].apply(
-                lambda x: DISEASE_COLORS.get(x.lower(), [100, 100, 100])
-            )  # Default gray
-
-            # Find the most affected region by clustering locations
-            if len(df) > 0:
-                # Round latitude and longitude to 1 decimal place (groups locations in ~10 km clusters)
-                df["lat_cluster"] = df["latitude"].round(1)
-                df["lon_cluster"] = df["longitude"].round(1)
-
-                # Find the most affected region (largest cluster)
-                most_affected_region = (
-                    df.groupby(["lat_cluster", "lon_cluster"]).size().idxmax()
-                )
-                center_lat, center_lon = most_affected_region
-            else:
-                center_lat, center_lon = df["latitude"].mean(), df["longitude"].mean()
-
-            # **Dynamically Adjust Dot Size Based on Zoom**
-            def get_dynamic_radius(zoom):
-                """Returns the dot size based on zoom level."""
-                if zoom > 12:
-                    return 300  # Smallest dots when fully zoomed in
-                elif zoom > 10:
-                    return 600  # Medium-small dots
-                elif zoom > 8:
-                    return 1200  # Medium dots
-                elif zoom > 6:
-                    return 1800  # Medium-large dots
-                return 2500  # Largest dots when zoomed out
-
-            # Start with a reasonable zoom level
-            initial_zoom = 6
-
-            # Pydeck Layer with dynamically adjusting dot sizes
-            layer = pdk.Layer(
-                "ScatterplotLayer",
-                data=df,
-                get_position=["longitude", "latitude"],
-                get_fill_color="color",
-                get_radius=get_dynamic_radius(initial_zoom),  # Start with correct size
-                pickable=True,
-            )
-
-            # Define Pydeck view state
-            view_state = pdk.ViewState(
-                latitude=center_lat,
-                longitude=center_lon,
-                zoom=initial_zoom,
-                min_zoom=3,
-                max_zoom=15,
-                pitch=0,
-            )
-
-            # Render Pydeck map
-            map_deck = pdk.Deck(
-                layers=[layer],
-                initial_view_state=view_state,
-                tooltip={"text": "{disease detected}"},
-            )
-            st.pydeck_chart(map_deck)
-
-    # Display legend
-    with cols[1]:
-        with st.container(border=True):
+        with st.container(border=True):    
+            # Display legend
             st.subheader("📝 Disease Legend")
             for disease, color in DISEASE_COLORS.items():
                 st.markdown(
                     f"<div style='display:flex; align-items:center; margin-bottom:5px;'>"
-                    f"<div style='background-color:rgb({color[0]},{color[1]},{color[2]}); "
+                    f"<div style='background-color:{color}; "
                     f"width:15px; height:15px; border-radius:50%; margin-right:10px;'></div>"
                     f"<span>{disease.title()}</span>"
                     f"</div>",
                     unsafe_allow_html=True,
                 )
-
+            st.markdown("<div style='margin-bottom:20px;'></div>", unsafe_allow_html=True)
+    
+    with col1:
+        # Display the map in the main column
+        with st.container(border=True):
+            if len(filtered_df) > 0:
+                # Assign color based on disease type
+                filtered_df["color"] = filtered_df["disease detected"].apply(
+                    lambda x: DISEASE_COLORS.get(x.lower(), "#646464")  # Default gray
+                )
+                
+                # Create the Plotly Express scattermapbox
+                fig = px.scatter_mapbox(
+                    filtered_df, 
+                    lat="latitude", 
+                    lon="longitude", 
+                    color="disease detected",
+                    color_discrete_map=DISEASE_COLORS,
+                    hover_name="disease detected",
+                    hover_data=["confidence", "latitude", "longitude"],
+                    zoom=5,
+                    size_max=15,
+                    opacity=0.8
+                )
+                
+                # Update layout to use open-street-map
+                fig.update_layout(
+                    mapbox_style="open-street-map",
+                    margin={"r": 0, "t": 0, "l": 0, "b": 0},
+                    height=600,
+                    legend=dict(
+                        title="Legend",
+                        yanchor="top",
+                        y=0.99,
+                        xanchor="left",
+                        x=0.01,
+                        bgcolor="rgba(255, 255, 255, 0.8)"
+                    )
+                )
+                
+                # Display the map
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.warning("No data available for the selected filter.")
 
 if __name__ == "__main__":
     default_theme = {
