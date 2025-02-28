@@ -7,10 +7,10 @@ from modules.database import fetch_all_locations  # Fetch data from Google Sheet
 DISEASE_COLORS = {
     "rust": [255, 0, 0],  # Red
     "cercospora": [0, 255, 0],  # Green
-    "algal growth": [0, 0, 255],  # Blue
-    "sooty mold": [255, 165, 0],  # Orange
-    "late stage rust": [128, 0, 128],  # Purple
-    "abiotic disorder": [0, 128, 128],  # Teal
+    "algal-growth": [0, 0, 255],  # Blue
+    "sooty-mold": [255, 165, 0],  # Orange
+    "late-stage-rust": [128, 0, 128],  # Purple
+    "abiotic-disorder": [0, 128, 128],  # Teal
 }
 
 
