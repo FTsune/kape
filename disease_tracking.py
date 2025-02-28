@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import numpy as np
 from modules.database import fetch_all_locations  # Fetch data from Google Sheets
 
 # Define colors for different diseases (Hex format for Plotly)
@@ -40,6 +41,32 @@ def main(theme_colors=None):
     df["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
     df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
 
+    # Detect and adjust overlapping coordinates
+    # Add a small jitter to coordinates that are exactly the same
+    # Group by lat/long and create unique display coordinates
+    coord_counts = df.groupby(['latitude', 'longitude']).size().reset_index(name='count')
+    
+    # Add small jitter to coordinates
+    for idx, row in coord_counts.iterrows():
+        if row['count'] > 1:
+            # Find all rows with these coordinates
+            mask = (df['latitude'] == row['latitude']) & (df['longitude'] == row['longitude'])
+            matching_rows = df[mask]
+            
+            # Apply jitter to these coordinates
+            jitter_amount = 0.0005  # Small amount that's visible on map zoom
+            jitter_lats = np.random.uniform(-jitter_amount, jitter_amount, matching_rows.shape[0])
+            jitter_longs = np.random.uniform(-jitter_amount, jitter_amount, matching_rows.shape[0])
+            
+            # Create display coordinates
+            df.loc[mask, 'display_lat'] = df.loc[mask, 'latitude'] + jitter_lats
+            df.loc[mask, 'display_long'] = df.loc[mask, 'longitude'] + jitter_longs
+        else:
+            # No overlapping for this coordinate
+            mask = (df['latitude'] == row['latitude']) & (df['longitude'] == row['longitude'])
+            df.loc[mask, 'display_lat'] = df.loc[mask, 'latitude']
+            df.loc[mask, 'display_long'] = df.loc[mask, 'longitude']
+
     # Create two columns layout
     col1, col2 = st.columns([0.7, 0.3])
     
@@ -78,15 +105,15 @@ def main(theme_colors=None):
                     lambda x: DISEASE_COLORS.get(x.lower(), "#646464")  # Default gray
                 )
                 
-                # Create the Plotly Express scattermapbox
+                # Create the Plotly Express scattermapbox using the jittered coordinates
                 fig = px.scatter_mapbox(
                     filtered_df, 
-                    lat="latitude", 
-                    lon="longitude", 
+                    lat="display_lat",  # Use jittered coordinates 
+                    lon="display_long", # Use jittered coordinates
                     color="disease detected",
                     color_discrete_map=DISEASE_COLORS,
                     hover_name="disease detected",
-                    hover_data=["confidence", "latitude", "longitude"],
+                    hover_data=["confidence", "latitude", "longitude"],  # Show original coordinates in hover
                     zoom=5,
                     size_max=15,
                     opacity=0.8
