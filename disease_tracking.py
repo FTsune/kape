@@ -15,7 +15,7 @@ DISEASE_COLORS = {
 }
 
 def main(theme_colors=None):
-    st.title("🌍 Disease Tracking Map")
+    st.info("Disease markers may overlap; zoom in for a clearer view.",icon=":material/info:")
     
     # Fetch data from Google Sheets
     locations = fetch_all_locations()
@@ -54,7 +54,7 @@ def main(theme_colors=None):
             matching_rows = df[mask]
             
             # Apply jitter to these coordinates
-            jitter_amount = 0.0005  # Small amount that's visible on map zoom
+            jitter_amount = 0.0001  # Small amount that's visible on map zoom
             jitter_lats = np.random.uniform(-jitter_amount, jitter_amount, matching_rows.shape[0])
             jitter_longs = np.random.uniform(-jitter_amount, jitter_amount, matching_rows.shape[0])
             
