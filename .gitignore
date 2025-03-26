@@ -143,3 +143,6 @@ dmypy.json
 .pyre/
 
 coffeediseasedb-1ef5f42ae808.json
+
+# secrets
+.streamlit/secrets.toml

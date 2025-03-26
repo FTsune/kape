@@ -37,8 +37,10 @@ if "dark_theme" not in st.session_state:
 
 # Function to get the current theme
 def get_theme(is_dark_theme):
-    return THEME_COLORS["DARK"] if is_dark_theme else THEME_COLORS["LIGHT"]
-
+    theme = THEME_COLORS["DARK"] if is_dark_theme else THEME_COLORS["LIGHT"]
+    for key, value in theme.items():
+        st.config.set_option(f"theme.{key}", value)
+    return theme
 
 # Set the current theme based on session state
 current_theme = get_theme(st.session_state.dark_theme)
@@ -66,7 +68,7 @@ st.markdown(
 )
 
 # Display the logo using st.image
-st.sidebar.image(current_theme["logo"], use_column_width=True)
+st.logo(current_theme["logo"], size='large')
 
 # Dynamic styles for option menu
 menu_styles = {

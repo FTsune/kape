@@ -109,9 +109,9 @@ def main(theme_colors):
                 <p class="subtitle">Full Stack Developer</p>
             </div>
             <div class="grid-item">
-                <img src="./app/static/franco.jpg">
+                <img src="./app/static/franco.png">
                 <p class="title">FRANCO</p>
-                <p class="subtitle">Python Developer</p>
+                <p class="subtitle">Full Stack Developer</p>
             </div>
             <div class="grid-item">
                 <img src="./app/static/marvin.png">

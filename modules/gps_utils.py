@@ -116,7 +116,18 @@ def get_image_taken_time(image_file):
 
     try:
         img = Image.open(image_file)
+
         exif_data = piexif.load(img.info.get("exif", b""))
+
+
+        # Check if EXIF data exists
+        exif_data_bytes = img.info.get("exif", None)
+        if not exif_data_bytes:
+            return None  # No EXIF data available
+
+        # Load EXIF data using piexif
+        exif_data = piexif.load(exif_data_bytes)
+
 
         date_taken = exif_data.get("Exif", {}).get(piexif.ExifIFD.DateTimeOriginal)
 
