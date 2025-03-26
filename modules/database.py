@@ -64,9 +64,15 @@ def save_detection_to_database(disease_name, confidence, gps_data, date_taken):
         formatted_date,  # Either actual image taken time or blank
         disease_name,
         confidence,
+
+        (gps_data or {}).get("latitude", "N/A"),
+        (gps_data or {}).get("longitude", "N/A"),
+        (gps_data or {}).get("altitude", "N/A"),
+
         gps_data.get("latitude", "N/A") if gps_data else "N/A",
         gps_data.get("longitude", "N/A") if gps_data else "N/A",
         gps_data.get("altitude", "N/A") if gps_data else "N/A",
+
     ]
 
     # Append data to Google Sheets

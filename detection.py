@@ -17,6 +17,7 @@ from streamlit_extras.stylable_container import stylable_container
 from modules.gps_utils import get_gps_location, save_location_data
 from modules.processing import format_detection_results, non_max_suppression
 from modules.visualizations import draw_bounding_boxes, run_live_detection
+from modules.image_uploader import authenticate_drive, upload_image  # ✅ NEW
 
 
 def main(theme_colors):
@@ -106,6 +107,9 @@ def main(theme_colors):
         placeholder="Choose a model...",
     )
 
+    adv_opt = st.toggle("Advanced Options")
+    confidence = 0.4
+    overlap_threshold = 0.3
     adv_opt = st.sidebar.toggle("Advanced Options")
 
     if adv_opt:
@@ -115,6 +119,19 @@ def main(theme_colors):
         overlap_threshold = (
             float(st.sidebar.slider("Select Overlap Threshold", 0, 100, 30)) / 100
         )
+
+    # ✅ GDrive checkbox
+    save_to_drive = st.sidebar.checkbox("📤 Save samples to improve the model")
+
+    # ✅ Authenticate Drive only once
+    @st.cache_resource
+    def get_drive():
+        return authenticate_drive()
+
+    drive = get_drive()
+    PARENT_FOLDER_ID = (
+        "1OgdV5CRT61ujv1uW1SSgnesnG59bT5ss"  # ✅ Your actual GDrive folder
+    )
 
     source_img = st.sidebar.file_uploader(
         "Choose an image...", type=("jpg", "jpeg", "png", "bmp", "webp")
@@ -199,7 +216,6 @@ def main(theme_colors):
                 st.write(f"Longitude: {gps_data['longitude']:.6f}°")
                 if gps_data["altitude"]:
                     st.write(f"Altitude: {float(gps_data['altitude']):.1f}m")
-
                 st.map({"lat": [gps_data["latitude"]], "lon": [gps_data["longitude"]]})
 
         if st.sidebar.button("Detect Objects"):
@@ -225,6 +241,15 @@ def main(theme_colors):
                 return
 
             if detection_model_choice == "Both Models":
+
+                res_disease = model_disease.predict(uploaded_image, conf=confidence)
+                res_leaf = model_leaf.predict(uploaded_image, conf=confidence)
+
+                disease_boxes = non_max_suppression(
+                    res_disease[0].boxes, overlap_threshold
+                )
+                leaf_boxes = non_max_suppression(res_leaf[0].boxes, overlap_threshold)
+
                 # Run both models
                 @st.dialog('Results')
                 def both_models():
@@ -233,6 +258,7 @@ def main(theme_colors):
 
                     disease_boxes = non_max_suppression(res_disease[0].boxes, 0.3)
                     leaf_boxes = non_max_suppression(res_leaf[0].boxes, 0.3)
+
 
                     result_image = np.array(uploaded_image)
                     result_image = draw_bounding_boxes(
@@ -272,7 +298,53 @@ def main(theme_colors):
                         
                 both_models()  # Fixed: Added parentheses to call the function
 
+                boxes = disease_boxes + leaf_boxes
+                labels = {**res_disease[0].names, **res_leaf[0].names}
+
             else:
+                res = model.predict(uploaded_image, conf=confidence)
+                boxes = non_max_suppression(res[0].boxes, overlap_threshold)
+                labels = res[0].names
+                result_image = draw_bounding_boxes(
+                    uploaded_image, boxes, labels, colors
+                )
+
+            image_placeholder.image(
+                result_image, caption="Detected Image", use_column_width=True
+            )
+
+            saved_any_detections = False
+            uploaded = False
+
+            for box in boxes:
+                class_id = int(box.cls[0])
+                conf_score = round(float(box.conf[0]) * 100, 1)
+                disease_name = labels[class_id]
+
+                if conf_score > 50:
+                    if disease_name.lower() in ["arabica", "liberica", "robusta"]:
+                        continue
+
+                    save_location_data(source_img, disease_name, conf_score, gps_data)
+                    saved_any_detections = True
+
+                    # ✅ Upload only once per image
+                    if save_to_drive and not uploaded:
+                        temp_path = f"temp_{uuid.uuid4().hex}.jpg"
+                        uploaded_image.save(temp_path)
+                        try:
+                            result = upload_image(
+                                temp_path, disease_name, drive, PARENT_FOLDER_ID
+                            )
+                            st.toast(result)
+                        except Exception as e:
+                            st.error(f"Drive upload failed: {e}")
+                        os.remove(temp_path)
+                        uploaded = True
+
+            if saved_any_detections:
+                st.success("✅ Data saved successfully!")
+
                 # Run selected model
                 @st.dialog('Results')
                 def run_model():
@@ -304,8 +376,6 @@ def main(theme_colors):
                         st.success("✅ Data saved successfully!")
                         
                 run_model()  # This function call looks good
-
-
 
 
 if __name__ == "__main__":
