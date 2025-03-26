@@ -106,29 +106,34 @@ def get_gps_location(image):
     return None
 
 
+# Global flag to avoid spamming the same warning
+has_warned_about_date_taken = False
+
+
 def get_image_taken_time(image_file):
     """Extract the 'Date Taken' (DateTimeOriginal) from EXIF metadata, if available."""
-    try:
-        # Open the image correctly using Streamlit's uploaded file object
-        img = Image.open(image_file)
+    global has_warned_about_date_taken
 
-        # Load EXIF data using piexif
+    try:
+        img = Image.open(image_file)
         exif_data = piexif.load(img.info.get("exif", b""))
 
-        # Extract DateTimeOriginal (Date Taken)
         date_taken = exif_data.get("Exif", {}).get(piexif.ExifIFD.DateTimeOriginal)
 
         if date_taken:
-            # Convert "YYYY:MM:DD HH:MM:SS" format to "YYYY-MM-DD"
             return datetime.strptime(
                 date_taken.decode("utf-8"), "%Y:%m:%d %H:%M:%S"
             ).date()
 
     except Exception as e:
-        st.warning(f"Error extracting image date taken: {str(e)}")
-        return None  # Return None if an error occurs
+        if not has_warned_about_date_taken:
+            st.warning(f"⚠️ Error extracting image date taken: {str(e)}")
+            has_warned_about_date_taken = True
 
-    return None  # Default return if no timestamp is found
+    return None
+
+
+# Default return if no timestamp is found
 
 
 def save_location_data(image_file, disease_name, confidence, gps_data):

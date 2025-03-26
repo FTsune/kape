@@ -17,6 +17,7 @@ from streamlit_extras.stylable_container import stylable_container
 from modules.gps_utils import get_gps_location, save_location_data
 from modules.processing import format_detection_results, non_max_suppression
 from modules.visualizations import draw_bounding_boxes, run_live_detection
+from modules.image_uploader import authenticate_drive, upload_image  # ✅ NEW
 
 
 def main(theme_colors):
@@ -107,7 +108,8 @@ def main(theme_colors):
     )
 
     adv_opt = st.toggle("Advanced Options")
-
+    confidence = 0.4
+    overlap_threshold = 0.3
     if adv_opt:
         confidence = (
             float(st.sidebar.slider("Select Model Confidence", 25, 100, 40)) / 100
@@ -115,6 +117,19 @@ def main(theme_colors):
         overlap_threshold = (
             float(st.sidebar.slider("Select Overlap Threshold", 0, 100, 30)) / 100
         )
+
+    # ✅ GDrive checkbox
+    save_to_drive = st.sidebar.checkbox("📤 Save samples to improve the model")
+
+    # ✅ Authenticate Drive only once
+    @st.cache_resource
+    def get_drive():
+        return authenticate_drive()
+
+    drive = get_drive()
+    PARENT_FOLDER_ID = (
+        "1OgdV5CRT61ujv1uW1SSgnesnG59bT5ss"  # ✅ Your actual GDrive folder
+    )
 
     source_img = st.sidebar.file_uploader(
         "Choose an image...", type=("jpg", "jpeg", "png", "bmp", "webp")
@@ -135,7 +150,6 @@ def main(theme_colors):
                 st.write(f"Longitude: {gps_data['longitude']:.6f}°")
                 if gps_data["altitude"]:
                     st.write(f"Altitude: {float(gps_data['altitude']):.1f}m")
-
                 st.map({"lat": [gps_data["latitude"]], "lon": [gps_data["longitude"]]})
 
         if st.sidebar.button("Detect Objects"):
@@ -161,12 +175,13 @@ def main(theme_colors):
                 return
 
             if detection_model_choice == "Both Models":
-                # Run both models
-                res_disease = model_disease.predict(uploaded_image, conf=0.4)
-                res_leaf = model_leaf.predict(uploaded_image, conf=0.4)
+                res_disease = model_disease.predict(uploaded_image, conf=confidence)
+                res_leaf = model_leaf.predict(uploaded_image, conf=confidence)
 
-                disease_boxes = non_max_suppression(res_disease[0].boxes, 0.3)
-                leaf_boxes = non_max_suppression(res_leaf[0].boxes, 0.3)
+                disease_boxes = non_max_suppression(
+                    res_disease[0].boxes, overlap_threshold
+                )
+                leaf_boxes = non_max_suppression(res_leaf[0].boxes, overlap_threshold)
 
                 result_image = np.array(uploaded_image)
                 result_image = draw_bounding_boxes(
@@ -176,32 +191,50 @@ def main(theme_colors):
                     result_image, leaf_boxes, res_leaf[0].names, cleaf_colors
                 )
 
+                boxes = disease_boxes + leaf_boxes
+                labels = {**res_disease[0].names, **res_leaf[0].names}
+
             else:
-                # Run selected model
-                res = model.predict(uploaded_image, conf=0.4)
-                boxes = non_max_suppression(res[0].boxes, 0.3)
+                res = model.predict(uploaded_image, conf=confidence)
+                boxes = non_max_suppression(res[0].boxes, overlap_threshold)
                 labels = res[0].names
                 result_image = draw_bounding_boxes(
                     uploaded_image, boxes, labels, colors
                 )
 
-            st.image(result_image, caption="Detected Image", use_column_width=True)
+            image_placeholder.image(
+                result_image, caption="Detected Image", use_column_width=True
+            )
 
-            saved_any_detections = False  # Track if anything was saved
+            saved_any_detections = False
+            uploaded = False
 
             for box in boxes:
                 class_id = int(box.cls[0])
-                confidence = round(float(box.conf[0]) * 100, 1)  # Convert to percentage
+                conf_score = round(float(box.conf[0]) * 100, 1)
                 disease_name = labels[class_id]
 
-                # ✅ Only save detections with confidence > 50%
-                if confidence > 50:
-                    save_location_data(source_img, disease_name, confidence, gps_data)
-                    saved_any_detections = (
-                        True  # Mark that we saved at least one detection
-                    )
+                if conf_score > 50:
+                    if disease_name.lower() in ["arabica", "liberica", "robusta"]:
+                        continue
 
-            # ✅ Show success message only once, if any detections were saved
+                    save_location_data(source_img, disease_name, conf_score, gps_data)
+                    saved_any_detections = True
+
+                    # ✅ Upload only once per image
+                    if save_to_drive and not uploaded:
+                        temp_path = f"temp_{uuid.uuid4().hex}.jpg"
+                        uploaded_image.save(temp_path)
+                        try:
+                            result = upload_image(
+                                temp_path, disease_name, drive, PARENT_FOLDER_ID
+                            )
+                            st.toast(result)
+                        except Exception as e:
+                            st.error(f"Drive upload failed: {e}")
+                        os.remove(temp_path)
+                        uploaded = True
+
             if saved_any_detections:
                 st.success("✅ Data saved successfully!")
 
