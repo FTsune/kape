@@ -143,6 +143,7 @@ dmypy.json
 .pyre/
 
 coffeediseasedb-1ef5f42ae808.json
+client_secret_324667823940-3s3k1pcje8qtb81f3efs6lvf7v24hujo.apps.googleusercontent.com.json
 
 # secrets
 .streamlit/secrets.toml

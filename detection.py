@@ -17,7 +17,7 @@ from streamlit_extras.stylable_container import stylable_container
 from modules.gps_utils import get_gps_location, save_location_data
 from modules.processing import format_detection_results, non_max_suppression
 from modules.visualizations import draw_bounding_boxes, run_live_detection
-from modules.image_uploader import authenticate_drive, upload_image  # ✅ NEW
+from modules.image_uploader import authenticate_drive, upload_image  
 
 
 def main(theme_colors):
@@ -107,10 +107,9 @@ def main(theme_colors):
         placeholder="Choose a model...",
     )
 
-    adv_opt = st.toggle("Advanced Options")
+    adv_opt = st.sidebar.toggle("Advanced Options")
     confidence = 0.4
     overlap_threshold = 0.3
-    adv_opt = st.sidebar.toggle("Advanced Options")
 
     if adv_opt:
         confidence = (
@@ -241,25 +240,18 @@ def main(theme_colors):
                 return
 
             if detection_model_choice == "Both Models":
-
-                res_disease = model_disease.predict(uploaded_image, conf=confidence)
-                res_leaf = model_leaf.predict(uploaded_image, conf=confidence)
-
-                disease_boxes = non_max_suppression(
-                    res_disease[0].boxes, overlap_threshold
-                )
-                leaf_boxes = non_max_suppression(res_leaf[0].boxes, overlap_threshold)
-
                 # Run both models
                 @st.dialog('Results')
                 def both_models():
-                    res_disease = model_disease.predict(uploaded_image, conf=0.4)
-                    res_leaf = model_leaf.predict(uploaded_image, conf=0.4)
+                    # Predict using both disease and leaf models
+                    res_disease = model_disease.predict(uploaded_image, conf=confidence)
+                    res_leaf = model_leaf.predict(uploaded_image, conf=confidence)
 
-                    disease_boxes = non_max_suppression(res_disease[0].boxes, 0.3)
-                    leaf_boxes = non_max_suppression(res_leaf[0].boxes, 0.3)
+                    # Apply non-max suppression
+                    disease_boxes = non_max_suppression(res_disease[0].boxes, overlap_threshold)
+                    leaf_boxes = non_max_suppression(res_leaf[0].boxes, overlap_threshold)
 
-
+                    # Prepare result image
                     result_image = np.array(uploaded_image)
                     result_image = draw_bounding_boxes(
                         result_image, disease_boxes, res_disease[0].names, cdisease_colors
@@ -267,115 +259,151 @@ def main(theme_colors):
                     result_image = draw_bounding_boxes(
                         result_image, leaf_boxes, res_leaf[0].names, cleaf_colors
                     )
-                    st.image(result_image, caption="Detected Image", use_column_width=True)
+                    with st.container(border=True):
+                        st.image(result_image, caption="Detected Image", use_column_width=True)
 
                     saved_any_detections = False  # Track if anything was saved
-                    
-                    # Add code to save detections similar to the other branch
-                    # For disease detections
+                    uploaded = False
+
+                    # Process disease detections
                     for box in disease_boxes:
                         class_id = int(box.cls[0])
-                        confidence = round(float(box.conf[0]) * 100, 1)
+                        confidence_score = round(float(box.conf[0]) * 100, 1)
                         disease_name = res_disease[0].names[class_id]
                         
-                        if confidence > 50:
-                            save_location_data(source_img, disease_name, confidence, gps_data)
+                        if confidence_score > 50:
+                            save_location_data(source_img, disease_name, confidence_score, gps_data)
                             saved_any_detections = True
+
+                            # Upload to drive only once per image
+                            if save_to_drive and not uploaded:
+                                temp_path = f"temp_{uuid.uuid4().hex}.jpg"
+                                uploaded_image.save(temp_path)
+                                try:
+                                    result = upload_image(
+                                        temp_path, disease_name, drive, PARENT_FOLDER_ID
+                                    )
+                                    st.toast(result)
+                                except Exception as e:
+                                    st.error(f"Drive upload failed: {e}")
+                                os.remove(temp_path)
+                                uploaded = True
                     
-                    # For leaf detections
+                    # Process leaf detections
                     for box in leaf_boxes:
                         class_id = int(box.cls[0])
-                        confidence = round(float(box.conf[0]) * 100, 1)
+                        confidence_score = round(float(box.conf[0]) * 100, 1)
                         leaf_name = res_leaf[0].names[class_id]
                         
-                        if confidence > 50:
-                            save_location_data(source_img, leaf_name, confidence, gps_data)
+                        if confidence_score > 50:
+                            # Skip coffee variety detection
+                            if leaf_name.lower() in ["arabica", "liberica", "robusta"]:
+                                continue
+
+                            save_location_data(source_img, leaf_name, confidence_score, gps_data)
                             saved_any_detections = True
+
+                            # Upload to drive only once per image
+                            if save_to_drive and not uploaded:
+                                temp_path = f"temp_{uuid.uuid4().hex}.jpg"
+                                uploaded_image.save(temp_path)
+                                try:
+                                    result = upload_image(
+                                        temp_path, leaf_name, drive, PARENT_FOLDER_ID
+                                    )
+                                    st.toast(result)
+                                except Exception as e:
+                                    st.error(f"Drive upload failed: {e}")
+                                os.remove(temp_path)
+                                uploaded = True
+                    
+                    # Additional logging section
+                    # st.write("### Detection Details")
+                    
+                    # Log disease detections
+                    # st.write("#### Disease Detections")
+                    for box in disease_boxes:
+                        class_id = int(box.cls[0])
+                        confidence_score = round(float(box.conf[0]) * 100, 1)
+                        disease_name = res_disease[0].names[class_id]
+                        # st.toast(f"✅ {disease_name}: {confidence_score}% confidence")
+                    
+                    # Log leaf detections
+                    # st.write("#### Leaf Detections")
+                    for box in leaf_boxes:
+                        class_id = int(box.cls[0])
+                        confidence_score = round(float(box.conf[0]) * 100, 1)
+                        leaf_name = res_leaf[0].names[class_id]
+                        # st.write(f"- {leaf_name}: {confidence_score}% confidence")
                     
                     # Show success message if any detections were saved
                     if saved_any_detections:
                         st.success("✅ Data saved successfully!")
-                        
-                both_models()  # Fixed: Added parentheses to call the function
-
-                boxes = disease_boxes + leaf_boxes
-                labels = {**res_disease[0].names, **res_leaf[0].names}
+                
+                both_models()  # Call the function
 
             else:
-                res = model.predict(uploaded_image, conf=confidence)
-                boxes = non_max_suppression(res[0].boxes, overlap_threshold)
-                labels = res[0].names
-                result_image = draw_bounding_boxes(
-                    uploaded_image, boxes, labels, colors
-                )
-
-            image_placeholder.image(
-                result_image, caption="Detected Image", use_column_width=True
-            )
-
-            saved_any_detections = False
-            uploaded = False
-
-            for box in boxes:
-                class_id = int(box.cls[0])
-                conf_score = round(float(box.conf[0]) * 100, 1)
-                disease_name = labels[class_id]
-
-                if conf_score > 50:
-                    if disease_name.lower() in ["arabica", "liberica", "robusta"]:
-                        continue
-
-                    save_location_data(source_img, disease_name, conf_score, gps_data)
-                    saved_any_detections = True
-
-                    # ✅ Upload only once per image
-                    if save_to_drive and not uploaded:
-                        temp_path = f"temp_{uuid.uuid4().hex}.jpg"
-                        uploaded_image.save(temp_path)
-                        try:
-                            result = upload_image(
-                                temp_path, disease_name, drive, PARENT_FOLDER_ID
-                            )
-                            st.toast(result)
-                        except Exception as e:
-                            st.error(f"Drive upload failed: {e}")
-                        os.remove(temp_path)
-                        uploaded = True
-
-            if saved_any_detections:
-                st.success("✅ Data saved successfully!")
-
                 # Run selected model
                 @st.dialog('Results')
                 def run_model():
-                    res = model.predict(uploaded_image, conf=0.4)
-                    boxes = non_max_suppression(res[0].boxes, 0.3)
+                    # Predict using the selected model
+                    if detection_model_choice == "Leaf Model":
+                        res = model_leaf.predict(uploaded_image, conf=confidence)
+                    else:
+                        res = model.predict(uploaded_image, conf=confidence)
+                    
+                    # Apply non-max suppression
+                    boxes = non_max_suppression(res[0].boxes, overlap_threshold)
                     labels = res[0].names
                     
-                    # Convert to numpy array if it's not already (for consistency)
-                    result_image = np.array(uploaded_image)
+                    # Draw bounding boxes on the image
                     result_image = draw_bounding_boxes(
-                        result_image, boxes, labels, colors
+                        uploaded_image, boxes, labels, colors
                     )
-                    st.image(result_image, caption="Detected Image", use_column_width=True)
+                    
+                    # Display the image
+                    with st.container(border=True):
+                        st.image(result_image, caption="Detected Image", use_column_width=True)
 
-                    saved_any_detections = False  # Track if anything was saved
+                    saved_any_detections = False
+                    uploaded = False
 
                     for box in boxes:
                         class_id = int(box.cls[0])
-                        confidence = round(float(box.conf[0]) * 100, 1)  # Convert to percentage
-                        disease_name = labels[class_id]
+                        conf_score = round(float(box.conf[0]) * 100, 1)
+                        detection_name = labels[class_id]
 
-                        # ✅ Only save detections with confidence > 50%
-                        if confidence > 50:
-                            save_location_data(source_img, disease_name, confidence, gps_data)
-                            saved_any_detections = True  # Mark that we saved at least one detection
+                        # Skip coffee varieties
+                        if detection_name.lower() in ["arabica", "liberica", "robusta"]:
+                            continue
 
-                    # ✅ Show success message only once, if any detections were saved
+                        if conf_score > 50:
+                            save_location_data(source_img, detection_name, conf_score, gps_data)
+                            saved_any_detections = True
+
+                            # Log the detection
+                            # st.toast(f"✅ {detection_name}: {conf_score}% confidence")
+
+                            # Upload to drive only once per image
+                            if save_to_drive and not uploaded:
+                                temp_path = f"temp_{uuid.uuid4().hex}.jpg"
+                                uploaded_image.save(temp_path)
+                                try:
+                                    result = upload_image(
+                                        temp_path, detection_name, drive, PARENT_FOLDER_ID
+                                    )
+                                    st.toast(result)
+                                except Exception as e:
+                                    st.error(f"Drive upload failed: {e}")
+                                os.remove(temp_path)
+                                uploaded = True
+
+                    # Show success message if any detections were saved
                     if saved_any_detections:
                         st.success("✅ Data saved successfully!")
-                        
-                run_model()  # This function call looks good
+                
+                # Always call the modal dialog
+                run_model()
 
 
 if __name__ == "__main__":
