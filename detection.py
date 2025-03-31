@@ -259,11 +259,13 @@ def main(theme_colors):
                     result_image = draw_bounding_boxes(
                         result_image, leaf_boxes, res_leaf[0].names, cleaf_colors
                     )
+                    
                     with st.container(border=True):
                         st.image(result_image, caption="Detected Image", use_column_width=True)
 
                     saved_any_detections = False  # Track if anything was saved
                     uploaded = False
+                    image_placeholder.image(result_image, caption="Detected Image", use_column_width=True)
 
                     # Process disease detections
                     for box in disease_boxes:
@@ -371,6 +373,8 @@ def main(theme_colors):
                     saved_any_detections = False
                     uploaded = False
                     detection_results = []
+
+                    image_placeholder.image(result_image, caption="Detected Image", use_column_width=True)
 
                     for box in boxes:
                         class_id = int(box.cls[0])
