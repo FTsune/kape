@@ -21,7 +21,19 @@
       "name2": "Hemileia vastatrix",
       "thumbnail": "images/diseases/leaf-rust.jpg",
       "image": "images/diseases/leaf-rust.jpg",
-      "description": "Hemileia vastatrix is a multicellular basidiomycete fungus of the order Pucciniales that causes coffee leaf rust, a disease affecting the coffee plant. Coffee serves as the obligate host of coffee rust, that is, the rust must have access to and come into physical contact with coffee in order to survive."
+      "description": "Hemileia vastatrix is a multicellular basidiomycete fungus of the order Pucciniales that causes coffee leaf rust, a disease affecting the coffee plant. Coffee serves as the obligate host of coffee rust, that is, the rust must have access to and come into physical contact with coffee in order to survive.",
+      "prevention": [
+        "Maintaining healthy plants and good sanitation practices.",
+        "Removing weeds that may compete with the coffee plant for nutrients or stress the coffee plants. This also contributes to maintaining tree health.",
+        "Pruning, which increases air flow through the trees and reduces humidity.",
+        "Removing plants that are weak, old or already affected by other diseases or pests.",
+        "Checking with your local agricultural advisory (extension) agent for recommended practices. Do this before applying any plant protection products."
+      ],
+      "solution": [
+        "Use of resistant varieties",
+        "Use of biocontrol and biopesticide products",
+        "Cultural practices"
+      ]
     },
     {
       "id": "Image 4",

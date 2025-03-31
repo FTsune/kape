@@ -130,14 +130,34 @@ def main():
 
     @st.dialog('DISEASE INFO 🦠', width="large")
     def info(disease):
-        cols = st.columns(2)
-        with cols[0]:
-            with st.container(border=True):
-                st.image(disease['image'], use_column_width=True)
-        with cols[1]:
-            st.subheader(disease['title'])
-            st.markdown(f"<p style='color: gray; margin-top: -15px; font-weight: italic;'><em>{disease['name2']}</em></p>", unsafe_allow_html=True)
-            st.markdown(disease['description'])
+        tab1, tab2 = st.tabs(['Info', 'Solution'])
+        
+        with tab1:
+            cols = st.columns(2)
+            with cols[0]:
+                with st.container(border=True):
+                    st.image(disease['image'], use_column_width=True)
+            with cols[1]:
+                st.subheader(disease['title'])
+                st.markdown(f"<p style='color: gray; margin-top: -15px; font-weight: italic;'><em>{disease['name2']}</em></p>", unsafe_allow_html=True)
+                st.markdown(disease['description'])
+        
+        with tab2:
+            st.subheader('Prevention')
+            if isinstance(disease.get('solution'), list):
+                # Convert the list to a numbered markdown format
+                solution_text = "\n".join([f"- {item}" for i, item in enumerate(disease['prevention'])])
+                st.markdown(solution_text)
+            else:
+                st.write(disease.get('solution', 'Use this and that to prevent me. 🐛'))
+            st.subheader('Solution')
+            if isinstance(disease.get('solution'), list):
+                # Convert the list to a numbered markdown format
+                solution_text = "\n".join([f"- {item}" for i, item in enumerate(disease['solution'])])
+                st.markdown(solution_text)
+            else:
+                st.write(disease.get('solution', 'Use this and that to solve me. 🐛'))
+            
 
     for disease in diseases:
         if clicked == disease['id']:
