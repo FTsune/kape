@@ -114,7 +114,7 @@ if tab == "Home":
     detection.main(THEME_COLORS)
 elif tab == "Dataset":
     dataset.main()
-elif tab == "Tracking":  # New tracking tab
+elif tab == "Map":
     disease_tracking.main(THEME_COLORS)
 elif tab == "Team":
     team.main(THEME_COLORS)
