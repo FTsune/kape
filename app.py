@@ -1,8 +1,7 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 from streamlit_extras.stylable_container import stylable_container
-import leaf
-import disease
+import dataset
 import detection
 import disease_tracking  # New import
 import team
@@ -102,8 +101,8 @@ with stylable_container(
 ):
     tab = option_menu(
         None,
-        ["Home", "Leaf", "Disease", "Tracking", "Team"],  # Added "Tracking"
-        icons=["house", "feather", "virus", "map", "people"],  # Added map icon
+        ["Home", "Dataset", "Tracking", "Team"],  # Added "Tracking"
+        icons=["house", "database", "map", "people"],  # Added map icon
         menu_icon="cast",
         default_index=0,
         orientation="horizontal",
@@ -113,10 +112,8 @@ with stylable_container(
 # Content rendering based on selected tab
 if tab == "Home":
     detection.main(THEME_COLORS)
-elif tab == "Leaf":
-    leaf.main()
-elif tab == "Disease":
-    disease.main()
+elif tab == "Dataset":
+    dataset.main()
 elif tab == "Tracking":  # New tracking tab
     disease_tracking.main(THEME_COLORS)
 elif tab == "Team":
