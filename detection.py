@@ -321,20 +321,23 @@ def main(theme_colors):
                     # st.write("### Detection Details")
                     
                     # Log disease detections
-                    # st.write("#### Disease Detections")
-                    for box in disease_boxes:
-                        class_id = int(box.cls[0])
-                        confidence_score = round(float(box.conf[0]) * 100, 1)
-                        disease_name = res_disease[0].names[class_id]
-                        # st.toast(f"✅ {disease_name}: {confidence_score}% confidence")
+                    results_col = st.columns(2)
+                    with results_col[0]:
+                        with st.popover("See disease results"):
+                            for box in disease_boxes:
+                                class_id = int(box.cls[0])
+                                confidence_score = round(float(box.conf[0]) * 100, 1)
+                                disease_name = res_disease[0].names[class_id]
+                                st.write(f"- **{disease_name}**: {confidence_score}% confidence")
                     
                     # Log leaf detections
-                    # st.write("#### Leaf Detections")
-                    for box in leaf_boxes:
-                        class_id = int(box.cls[0])
-                        confidence_score = round(float(box.conf[0]) * 100, 1)
-                        leaf_name = res_leaf[0].names[class_id]
-                        # st.write(f"- {leaf_name}: {confidence_score}% confidence")
+                    with results_col[1]:
+                        with st.popover("See leaf results"):
+                            for box in leaf_boxes:
+                                class_id = int(box.cls[0])
+                                confidence_score = round(float(box.conf[0]) * 100, 1)
+                                leaf_name = res_leaf[0].names[class_id]
+                                st.write(f"- **{leaf_name}**: {confidence_score}% confidence")
                     
                     # Show success message if any detections were saved
                     if saved_any_detections:
@@ -367,11 +370,14 @@ def main(theme_colors):
 
                     saved_any_detections = False
                     uploaded = False
+                    detection_results = []
 
                     for box in boxes:
                         class_id = int(box.cls[0])
                         conf_score = round(float(box.conf[0]) * 100, 1)
                         detection_name = labels[class_id]
+                        # Store results for the popover
+                        detection_results.append(f"- **{detection_name}**: {conf_score}% confidence")
 
                         # Skip coffee varieties
                         if detection_name.lower() in ["arabica", "liberica", "robusta"]:
@@ -380,9 +386,6 @@ def main(theme_colors):
                         if conf_score > 50:
                             save_location_data(source_img, detection_name, conf_score, gps_data)
                             saved_any_detections = True
-
-                            # Log the detection
-                            # st.toast(f"✅ {detection_name}: {conf_score}% confidence")
 
                             # Upload to drive only once per image
                             if save_to_drive and not uploaded:
@@ -397,7 +400,9 @@ def main(theme_colors):
                                     st.error(f"Drive upload failed: {e}")
                                 os.remove(temp_path)
                                 uploaded = True
-
+                    if detection_results:
+                        with st.popover('See advanced results'):
+                            st.write("\n".join(detection_results))
                     # Show success message if any detections were saved
                     if saved_any_detections:
                         st.success("✅ Data saved successfully!")
