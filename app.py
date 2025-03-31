@@ -101,7 +101,7 @@ with stylable_container(
 ):
     tab = option_menu(
         None,
-        ["Home", "Dataset", "Tracking", "Team"],  # Added "Tracking"
+        ["Home", "Dataset", "Map", "Team"], 
         icons=["house", "database", "map", "people"],  # Added map icon
         menu_icon="cast",
         default_index=0,
