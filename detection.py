@@ -274,7 +274,8 @@ def main(theme_colors):
                         disease_name = res_disease[0].names[class_id]
                         
                         if confidence_score > 50:
-                            save_location_data(source_img, disease_name, confidence_score, gps_data)
+                            with st.spinner("Adding disease to the database..."):
+                                save_location_data(source_img, disease_name, confidence_score, gps_data)
                             saved_any_detections = True
 
                             # Upload to drive only once per image
@@ -388,7 +389,8 @@ def main(theme_colors):
                             continue
 
                         if conf_score > 50:
-                            save_location_data(source_img, detection_name, conf_score, gps_data)
+                            with st.spinner("Adding disease to the database..."):
+                                save_location_data(source_img, detection_name, conf_score, gps_data)
                             saved_any_detections = True
 
                             # Upload to drive only once per image

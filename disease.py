@@ -150,6 +150,7 @@ def main():
                 st.markdown(solution_text)
             else:
                 st.write(disease.get('solution', 'Use this and that to prevent me. 🐛'))
+            st.divider()
             st.subheader('Solution')
             if isinstance(disease.get('solution'), list):
                 # Convert the list to a numbered markdown format
