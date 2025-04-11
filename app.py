@@ -1,8 +1,7 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 from streamlit_extras.stylable_container import stylable_container
-import leaf
-import disease
+import dataset
 import detection
 import disease_tracking  # New import
 import team
@@ -37,8 +36,10 @@ if "dark_theme" not in st.session_state:
 
 # Function to get the current theme
 def get_theme(is_dark_theme):
-    return THEME_COLORS["DARK"] if is_dark_theme else THEME_COLORS["LIGHT"]
-
+    theme = THEME_COLORS["DARK"] if is_dark_theme else THEME_COLORS["LIGHT"]
+    for key, value in theme.items():
+        st.config.set_option(f"theme.{key}", value)
+    return theme
 
 # Set the current theme based on session state
 current_theme = get_theme(st.session_state.dark_theme)
@@ -66,7 +67,7 @@ st.markdown(
 )
 
 # Display the logo using st.image
-st.sidebar.image(current_theme["logo"], use_column_width=True)
+st.logo(current_theme["logo"], size='large')
 
 # Dynamic styles for option menu
 menu_styles = {
@@ -100,8 +101,8 @@ with stylable_container(
 ):
     tab = option_menu(
         None,
-        ["Home", "Leaf", "Disease", "Tracking", "Team"],  # Added "Tracking"
-        icons=["house", "feather", "virus", "map", "people"],  # Added map icon
+        ["Home", "Dataset", "Map", "Team"], 
+        icons=["house", "database", "map", "people"],  # Added map icon
         menu_icon="cast",
         default_index=0,
         orientation="horizontal",
@@ -111,11 +112,9 @@ with stylable_container(
 # Content rendering based on selected tab
 if tab == "Home":
     detection.main(THEME_COLORS)
-elif tab == "Leaf":
-    leaf.main()
-elif tab == "Disease":
-    disease.main()
-elif tab == "Tracking":  # New tracking tab
+elif tab == "Dataset":
+    dataset.main()
+elif tab == "Map":
     disease_tracking.main(THEME_COLORS)
 elif tab == "Team":
     team.main(THEME_COLORS)

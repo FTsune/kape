@@ -111,12 +111,18 @@ has_warned_about_date_taken = False
 
 
 def get_image_taken_time(image_file):
-    """Extract the 'Date Taken' (DateTimeOriginal) from EXIF metadata, if available."""
     global has_warned_about_date_taken
 
     try:
         img = Image.open(image_file)
-        exif_data = piexif.load(img.info.get("exif", b""))
+
+        # Ensure EXIF data is available
+        exif_data_bytes = img.info.get("exif", None)
+        if not exif_data_bytes:
+            return None  # No EXIF data available
+
+        # Load EXIF data using piexif
+        exif_data = piexif.load(exif_data_bytes)
 
         date_taken = exif_data.get("Exif", {}).get(piexif.ExifIFD.DateTimeOriginal)
 
@@ -127,7 +133,7 @@ def get_image_taken_time(image_file):
 
     except Exception as e:
         if not has_warned_about_date_taken:
-            st.warning(f"⚠️ Error extracting image date taken: {str(e)}")
+            st.toast(f"⚠️ Error extracting image date taken: {str(e)}", icon="⚠️")
             has_warned_about_date_taken = True
 
     return None

@@ -1,22 +1,26 @@
-# modules/image_uploader.py
-
 from datetime import datetime
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from hashlib import md5
+import streamlit as st
+from oauth2client.service_account import ServiceAccountCredentials
 import os
+import json
 
-
-# Authenticate and return a Google Drive instance
+# Authenticate and return a Google Drive instance using Streamlit Secrets
 def authenticate_drive():
+    credentials_dict = st.secrets["gcp_service_account"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(
+        credentials_dict, ["https://www.googleapis.com/auth/drive"]
+    )
+    
     gauth = GoogleAuth()
-    gauth.LoadClientConfigFile(
-        "E:\Thesis - Coffee\Temp\Streamlit Web App - Temp\kape\client_secret_324667823940-3s3k1pcje8qtb81f3efs6lvf7v24hujo.apps.googleusercontent.com.json"
-    )  # Must be in project root
-    gauth.LocalWebserverAuth()  # Opens browser for login
-    return GoogleDrive(gauth)
+    gauth.credentials = creds
+    drive = GoogleDrive(gauth)
 
+    return drive
 
+# Upload image to Google Drive in structured folders (Disease/Date)
 def upload_image(image_path, disease_label, drive, parent_folder_id):
     # Step 1: Get or create disease folder
     file_list = drive.ListFile(

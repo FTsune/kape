@@ -1,5 +1,7 @@
 import gspread
+import streamlit as st
 from oauth2client.service_account import ServiceAccountCredentials
+import json
 
 # Define the scope for Google Sheets API
 SCOPES = [
@@ -15,8 +17,9 @@ SHEET_NAME = "CoffeeDiseaseData"
 
 
 def authenticate_google_sheets():
-    """Authenticate with Google Sheets API using service account credentials."""
-    creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, SCOPES)
+    """Authenticate with Google Sheets API using service account credentials from Streamlit Secrets."""
+    credentials_dict = st.secrets["gcp_service_account"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, SCOPES)
     client = gspread.authorize(creds)
     return client
 
@@ -54,7 +57,7 @@ def save_detection_to_database(disease_name, confidence, gps_data, date_taken):
     worksheet = get_or_create_worksheet()
 
     # Format date taken if available, otherwise leave it blank
-    formatted_date = date_taken.strftime("%Y-%m-%d") if date_taken else ""
+    formatted_date = date_taken.strftime("%Y-%m-%d") if date_taken else "N/A"
 
     # Create an entry
     entry = [
@@ -72,7 +75,7 @@ def save_detection_to_database(disease_name, confidence, gps_data, date_taken):
     return "Data saved successfully!"
 
 
-# 🔹 NEW FUNCTION: Fetch all locations from Google Sheets for disease tracking
+# 🔹 Fetch all locations from Google Sheets for disease tracking
 def fetch_all_locations():
     """Fetch all disease detection data from Google Sheets."""
     client = authenticate_google_sheets()
