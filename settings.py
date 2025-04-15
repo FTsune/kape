@@ -12,17 +12,23 @@ if ROOT not in sys.path:
 ROOT = ROOT.relative_to(Path.cwd())
 
 # Sources
-IMAGE = 'Image'
+IMAGE = "Image"
 
 SOURCES_LIST = [IMAGE]
 
 # Images config
-IMAGES_DIR = ROOT / 'images'
-DEFAULT_IMAGE = IMAGES_DIR / 'DB1.jpg'
-DEFAULT_DETECT_IMAGE = IMAGES_DIR / 'DB2.png'
+IMAGES_DIR = ROOT / "images"
+DEFAULT_IMAGE = IMAGES_DIR / "DB1.jpg"
+DEFAULT_DETECT_IMAGE = IMAGES_DIR / "DB2.png"
 
 
 # ML Model config
-MODEL_DIR = ROOT / 'weights'
-DISEASE_DETECTION_MODEL = MODEL_DIR / 'last.pt'
-LEAF_DETECTION_MODEL = MODEL_DIR / 'cleaf.pt'
+MODEL_DIR = ROOT / "weights"
+
+DISEASE_MODEL_SPOTS = MODEL_DIR / "spots.pt"  # old name: DISEASE_DETECTION_MODEL
+DISEASE_MODEL_FULL_LEAF = (
+    MODEL_DIR / "full_leaf(1).pt"
+)  # old name: NEW_DISEASE_DETECTION_MODEL
+DISEASE_MODEL_YOLO11M = MODEL_DIR / "yolo11m-full_leaf.pt"  # unified disease model
+
+LEAF_MODEL = MODEL_DIR / "cleaf.pt"  # unchanged

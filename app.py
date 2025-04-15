@@ -41,6 +41,7 @@ def get_theme(is_dark_theme):
         st.config.set_option(f"theme.{key}", value)
     return theme
 
+
 # Set the current theme based on session state
 current_theme = get_theme(st.session_state.dark_theme)
 
@@ -67,7 +68,7 @@ st.markdown(
 )
 
 # Display the logo using st.image
-st.logo(current_theme["logo"], size='large')
+st.logo(current_theme["logo"], size="large")
 
 # Dynamic styles for option menu
 menu_styles = {
@@ -101,7 +102,7 @@ with stylable_container(
 ):
     tab = option_menu(
         None,
-        ["Home", "Dataset", "Map", "Team"], 
+        ["Home", "Dataset", "Map", "Team"],
         icons=["house", "database", "map", "people"],  # Added map icon
         menu_icon="cast",
         default_index=0,
