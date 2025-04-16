@@ -243,7 +243,7 @@ def _upload_image_once(uploaded_image, name, drive, parent_folder_id):
     os.remove(temp_path)
 
 
-@st.dialog("Results", width="large")
+@st.dialog("Results")
 def _run_single_model(
     uploaded_image,
     source_img,
@@ -319,7 +319,8 @@ def _run_single_model(
                 disease_results.append((name, score))
 
     # Display the processed image (which still shows original labels)
-    st.image(result_image, caption="Detected Image", use_column_width=True)
+    with st.container(border=True):
+        st.image(result_image, caption="Detected Image", use_column_width=True)
 
     saved_any_detections = False
     uploaded = False
@@ -365,7 +366,7 @@ def _run_single_model(
                 st.markdown("**☣️ Diseases Detected:**")
                 for name, score in disease_results:
                     st.markdown(f"- **{name.title()}** — {score}% confidence")
-                st.markdown("---")
+
             if leaf_results:
                 st.markdown("**🍃 Leaf Types Detected:**")
                 for name, score in leaf_results:
@@ -377,7 +378,7 @@ def _run_single_model(
     return {"detection_ran": True, "last_result_image": result_image}
 
 
-@st.dialog("Results", width="large")
+@st.dialog("Results")
 def _run_both_models(
     uploaded_image,
     source_img,
@@ -458,7 +459,8 @@ def _run_both_models(
         leaf_results.append((name, score))
 
     # Display the final image with all detections
-    st.image(result_image, caption="Detected Image", use_column_width=True)
+    with st.container(border=True):
+        st.image(result_image, caption="Detected Image", use_column_width=True)
 
     saved_any_detections = False
     uploaded = False

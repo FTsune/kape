@@ -8,6 +8,7 @@ import settings
 import helper
 import uuid
 import os
+import streamlit_antd_components as sac
 from streamlit_extras.stylable_container import stylable_container
 
 from modules.gps_utils import (
@@ -26,6 +27,18 @@ from modules.detection_runner import generate_preview_image
 def main(theme_colors):
     if "dark_theme" not in st.session_state:
         st.session_state.dark_theme = False
+
+    # File uploader
+    st.sidebar.write('Upload Image(s)')
+    uploaded_images = st.sidebar.file_uploader(
+        "UPLOAD IMAGE(S)",
+        type=["jpg", "jpeg", "png", "bmp", "webp"],
+        accept_multiple_files=True,
+        key="multi_image_uploader",
+        label_visibility='collapsed'
+    )
+
+    st.sidebar.divider()
 
     # Sidebar theme
     with st.sidebar:
@@ -94,8 +107,8 @@ def main(theme_colors):
 
     disease_model_mode = st.sidebar.selectbox(
         "Disease Model Type:",
-        ["Default (Spots + Full Leaf)", "YOLOv11m - Full Leaf"],
-        index=0,
+        ["Spots + Full Leaf", "YOLOv11m - Full Leaf"],
+        index=1,
         key="disease_model_mode",
     )
 
@@ -104,12 +117,24 @@ def main(theme_colors):
     )
 
     adv_opt = st.sidebar.toggle("Advanced Options")
-    confidence = 0.4
+    confidence = 0.5
     overlap_threshold = 0.3
     if adv_opt:
-        confidence = float(st.sidebar.slider("Model Confidence", 25, 100, 40)) / 100
+        confidence = float(st.sidebar.slider("Model Confidence", 25, 100, 50)) / 100
         overlap_threshold = (
             float(st.sidebar.slider("Overlap Threshold", 0, 100, 30)) / 100
+        )
+        st.sidebar.markdown(
+            """
+            <div style="border-radius: 8px; background: linear-gradient(to bottom right, #14b8a6, #5eead4); 
+                        margin-bottom: 10px; padding: 16px; color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                <h3 style="text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); padding-bottom: 0; color: #d4fcf0; font-weight: bold; margin-bottom: 8px; font-size: 18px;">Pro Tip</h3>
+                <p style="color: #d4fcf0; font-size: 14px; opacity: 0.9; margin: 0; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">
+                    Higher confidence values increase precision but may miss some detections. Balance according to your needs.
+                </p>
+            </div>
+            """, 
+            unsafe_allow_html=True
         )
 
     save_to_drive = st.sidebar.checkbox("📤 Save samples to improve the model")
@@ -121,202 +146,260 @@ def main(theme_colors):
     drive = get_drive()
     PARENT_FOLDER_ID = "1OgdV5CRT61ujv1uW1SSgnesnG59bT5ss"
 
-    uploaded_images = st.sidebar.file_uploader(
-        "Upload image(s)",
-        type=["jpg", "jpeg", "png", "bmp", "webp"],
-        accept_multiple_files=True,
-        key="multi_image_uploader",
-    )
+    # if uploaded_images:
+    #     selected_idx = sac.pagination(
+    #         total=len(uploaded_images),
+    #         page_size=1,
+    #         align='center',
+    #     ) - 1
 
-    if uploaded_images:
-        with stylable_container(
-            key="preview_selector_container",
-            css_styles=f"""
-                background-color: {secondary_background_color};
-                padding: 0.5rem 1rem 0.75rem;
-                border-radius: 8px;
-                margin-bottom: 1rem;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            """,
-        ):
-            st.markdown(
-                f"<p style='margin: 0 0 0.25rem; font-weight: 600; font-size: 1rem; color: {primary_color};'>📷 Select an image to preview</p>",
-                unsafe_allow_html=True,
-            )
-
-            selected_idx = st.selectbox(
-                label="",
-                options=range(len(uploaded_images)),
-                format_func=lambda i: uploaded_images[i].name,
-                key="main_preview_selector",
-            )
-
-            source_img = uploaded_images[selected_idx]
-    else:
-        source_img = None
-
+    #     source_img = uploaded_images[selected_idx]
+    # else:
+    #     source_img = None
+        
     with stylable_container(
-        key="container_with_border",
+        key="instructions_container",
         css_styles=f"""
-        background-color: {secondary_background_color};
-        border-radius: 10px;
-        padding: calc(1em - 1px);
-        max-width: 694px;
-        margin: auto;
-        box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        {{
+            background-color: {background_color};
+            border-radius: 10px;
+            padding: 0;
+            max-width: 1000px;
+            margin: auto;
+            box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }}
         """,
     ):
-        col1, col2 = st.columns(2)
-
-        with col1:
-            with st.container(border=True):
-                image_placeholder = st.empty()
-                st.session_state["image_placeholder"] = image_placeholder
-                default_image_path = str(settings.DEFAULT_DETECT_IMAGE)
-
-                if source_img is None:
-                    default_image = PIL.Image.open(default_image_path)
-                    image_placeholder.image(
-                        default_image,
-                        caption="Sample Image: Objects Detected",
-                        use_column_width=True,
-                    )
-                else:
-                    uploaded_image = PIL.Image.open(source_img)
-
-                    if (
-                        "last_uploaded_filename" not in st.session_state
-                        or st.session_state["last_uploaded_filename"] != source_img.name
-                    ):
-                        st.session_state["last_uploaded_filename"] = source_img.name
-                        st.session_state["last_result_image"] = None
-
-                    model = model_leaf = model_disease = None
-
-                    if detection_model_choice == "Disease":
-                        if disease_model_mode == "YOLOv11m - Full Leaf":
-                            model = helper.load_model(
-                                Path(settings.DISEASE_MODEL_YOLO11M)
-                            )
-                        else:
-                            model = (
-                                helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
-                                helper.load_model(
-                                    Path(settings.DISEASE_MODEL_FULL_LEAF)
-                                ),
-                            )
-                        model_leaf = model_disease = None
-
-                    elif detection_model_choice == "Both Models":
-                        if disease_model_mode == "YOLOv11m - Full Leaf":
-                            model_disease = helper.load_model(
-                                Path(settings.DISEASE_MODEL_YOLO11M)
-                            )
-                        else:
-                            model_disease = (
-                                helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
-                                helper.load_model(
-                                    Path(settings.DISEASE_MODEL_FULL_LEAF)
-                                ),
-                            )
-                        model_leaf = helper.load_model(Path(settings.LEAF_MODEL))
-                        model = None
-
-                    st.session_state["uploaded_image"] = uploaded_image
-
-                    if st.session_state.get("last_result_image") is not None:
-                        image_placeholder.image(
-                            st.session_state["last_result_image"],
-                            caption="Detected Image",
-                            use_column_width=True,
-                        )
-                    else:
-                        # 🔁 Auto-generate preview (no saving)
-                        preview_image = generate_preview_image(
-                            uploaded_image,
-                            detection_model_choice,
-                            model if detection_model_choice != "Both Models" else None,
-                            model_leaf
-                            if detection_model_choice == "Both Models"
-                            else None,
-                            model_disease
-                            if detection_model_choice == "Both Models"
-                            else None,
-                            confidence,
-                            overlap_threshold,
-                            cdisease_colors,
-                            cleaf_colors,
-                        )
-                        st.session_state["last_result_image"] = preview_image
-                        image_placeholder.image(
-                            preview_image,
-                            caption="Detected Image",
-                            use_column_width=True,
-                        )
-
-        with col2:
-            with stylable_container(
-                key="container_with_border1",
-                css_styles=f"""
-                background-color: {background_color};
-                border-radius: 10px;
-                max-width: 694px;
+        # Teal gradient at the top
+        st.markdown(
+            """
+            <div style="height: 4px; background: linear-gradient(to right, #4dd6c1, #37b8a4, #2aa395); width: 100%;"></div>
+            """, 
+            unsafe_allow_html=True
+        )
+        
+        # Instructions header with checkmark icon
+        st.markdown(
+            f"""
+            <div style="padding: 0 24px 0 24px; display: flex; align-items: center;">
+                <div style="background-color: #37b8a4; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <h2 style="margin: 0; font-size: 24px; color: {text_color};">Instructions</h2>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        # Instructions subtitle
+        st.markdown(
+            f"""
+            <div style="padding: 0 24px 15px 65px; margin-top: -10px;">
+                <p style="color: {text_color}; opacity: 0.5; margin: 0;">Follow these steps to detect coffee leaf diseases</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        # Steps
+        steps = [
+            "Configure the model settings in the sidebar",
+            "Upload a valid coffee leaf image file (jpeg, jpg, webp, png) to run detection",
+            "Avoid bluriness and make sure the leaf is the main focus of the image",
+            "The system will detect diseases based on your configuration",
+            "Results will display detected diseases and confidence scores"
+        ]
+        
+        for i, step in enumerate(steps, 1):
+            st.markdown(
+                f"""
+                <div style="display: flex; align-items: center; padding: 8px 10px 0 50px;">
+                    <div style="background-color: #37b8a4; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">
+                        <span style="font-weight: 500; color: white">{i}</span>
+                    </div>
+                    <p style="line-height: 1.5; margin: 0; color: {text_color};">{step}</p>
+                </div>
                 """,
-            ):
-                col2_placeholder = st.empty()
+                unsafe_allow_html=True
+            )
+        
+        # Note banner
+        st.markdown(
+            f"""
+            <div style="border-radius: 4px; margin: 20px 24px 0; padding: 12px 16px 0; display: flex; align-items: flex-start;">
+                <p style="margin: 0; color: {primary_color};">Our model is currently optimized to detect diseases only in coffee leaves.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-                with col2_placeholder.container():
+        st.divider()
+
+        with stylable_container(
+                key="container_with_border",
+                css_styles=f"""
+                    {{=
+                        border-radius: 10px;
+                        padding: calc(1em - 1px);
+                        margin: auto;
+                    }}
+                    """,
+            ):
+
+            if "multi_image_uploader" not in st.session_state:
+                uploaded_images = None
+            else:
+                uploaded_images = st.session_state["multi_image_uploader"]
+            
+            # Add the pagination inside the container
+            if uploaded_images:
+                selected_idx = sac.pagination(
+                    total=len(uploaded_images),
+                    page_size=1,
+                    align='center',
+                ) - 1
+                
+                source_img = uploaded_images[selected_idx]
+            else:
+                source_img = None
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                with st.container(border=True):
+                    image_placeholder = st.empty()
+                    st.session_state["image_placeholder"] = image_placeholder
+                    default_image_path = str(settings.DEFAULT_IMAGE)
+
                     if source_img is None:
-                        st.markdown(
-                            f"<p style='border-radius: 10px 10px 0px 0px; border: 1px solid; border-bottom: 0px; padding: 12px; font-weight: bold; font-size: 1.35rem; color: {primary_color}'>INSTRUCTIONS</p>",
-                            unsafe_allow_html=True,
-                        )
-                        st.markdown(
-                            f"""
-                            <p style='border-right: 1px solid {primary_color}; border-left: 1px solid {primary_color}; font-size: 1rem; margin: -30px 0; padding: 12px 12px 25px; color: {text_color}'>
-                                Open the sidebar to start configuring.
-                                Upload a valid image file (jpeg, jpg, webp, png) and click "Detect Objects".
-                                Wait for a few seconds until it's done detecting objects.
-                                <br><br>
-                                Ensure that the photo clearly shows a coffee leaf. Avoid bluriness and make
-                                sure the leaf is the main focus of the image. 
-                            </p>
-                        """,
-                            unsafe_allow_html=True,
-                        )
-                        st.markdown(
-                            f"""
-                            <p style='border: 1px solid; border-top: 0px; font-size: 1rem; color: {primary_color}; margin-top: 10px; padding: 10px; border-radius: 0 0 10px 10px'>
-                                Our model is currently optimized to detect diseases only in coffee leaves.
-                            </p>
-                        """,
-                            unsafe_allow_html=True,
+                        default_image = PIL.Image.open(default_image_path)
+                        image_placeholder.image(
+                            default_image,
+                            caption="Sample Image",
+                            use_column_width=True,
                         )
                     else:
-                        # Show image metadata
-                        gps_data = get_gps_location(source_img)
-                        image_date = get_image_taken_time(source_img)
-                        location_name = (
-                            get_location_name(
-                                gps_data["latitude"], gps_data["longitude"]
-                            )
-                            if gps_data
-                            else "Unavailable"
-                        )
+                        uploaded_image = PIL.Image.open(source_img)
 
-                        st.markdown(f"- **Location**: `{location_name}`")
-                        if gps_data:
-                            st.markdown(
-                                f"- **Latitude**: `{gps_data.get('latitude', 'N/A')}`"
-                            )
-                            st.markdown(
-                                f"- **Longitude**: `{gps_data.get('longitude', 'N/A')}`"
+                        if (
+                            "last_uploaded_filename" not in st.session_state
+                            or st.session_state["last_uploaded_filename"] != source_img.name
+                        ):
+                            st.session_state["last_uploaded_filename"] = source_img.name
+                            st.session_state["last_result_image"] = None
+
+                        model = model_leaf = model_disease = None
+
+                        if detection_model_choice == "Disease":
+                            if disease_model_mode == "YOLOv11m - Full Leaf":
+                                model = helper.load_model(
+                                    Path(settings.DISEASE_MODEL_YOLO11M)
+                                )
+                            else:
+                                model = (
+                                    helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
+                                    helper.load_model(
+                                        Path(settings.DISEASE_MODEL_FULL_LEAF)
+                                    ),
+                                )
+                            model_leaf = model_disease = None
+
+                        elif detection_model_choice == "Both Models":
+                            if disease_model_mode == "YOLOv11m - Full Leaf":
+                                model_disease = helper.load_model(
+                                    Path(settings.DISEASE_MODEL_YOLO11M)
+                                )
+                            else:
+                                model_disease = (
+                                    helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
+                                    helper.load_model(
+                                        Path(settings.DISEASE_MODEL_FULL_LEAF)
+                                    ),
+                                )
+                            model_leaf = helper.load_model(Path(settings.LEAF_MODEL))
+                            model = None
+
+                        st.session_state["uploaded_image"] = uploaded_image
+
+                        if st.session_state.get("last_result_image") is not None:
+                            image_placeholder.image(
+                                st.session_state["last_result_image"],
+                                caption="Detected Image",
+                                use_column_width=True,
                             )
                         else:
-                            st.markdown("- **Latitude**: `Unavailable`")
-                            st.markdown("- **Longitude**: `Unavailable`")
-                        if image_date:
-                            st.markdown(f"- **Date Taken**: `{image_date}`")
+                            # 🔁 Auto-generate preview (no saving)
+                            preview_image = generate_preview_image(
+                                uploaded_image,
+                                detection_model_choice,
+                                model if detection_model_choice != "Both Models" else None,
+                                model_leaf
+                                if detection_model_choice == "Both Models"
+                                else None,
+                                model_disease
+                                if detection_model_choice == "Both Models"
+                                else None,
+                                confidence,
+                                overlap_threshold,
+                                cdisease_colors,
+                                cleaf_colors,
+                            )
+                            st.session_state["last_result_image"] = preview_image
+                            image_placeholder.image(
+                                preview_image,
+                                caption="Detected Image",
+                                use_column_width=True,
+                            )
+
+            with col2:
+                with stylable_container(
+                    key="container_with_border_right",
+                    css_styles=f"""
+                    {{
+                    }}
+                    """,
+                ):
+                    with st.container(border=True):
+                        col2_placeholder = st.empty()
+
+                    with col2_placeholder.container():
+                        detected_image_path = str(settings.DEFAULT_DETECT_IMAGE)
+                        if source_img is None:
+                            default_image = PIL.Image.open(detected_image_path)
+                            col2_placeholder.image(
+                                default_image,
+                                caption="Sample Image: Objects Detected",
+                                use_column_width=True,
+                            )
+                        else:
+                            # Show image metadata
+                            gps_data = get_gps_location(source_img)
+                            image_date = get_image_taken_time(source_img)
+                            location_name = (
+                                get_location_name(
+                                    gps_data["latitude"], gps_data["longitude"]
+                                )
+                                if gps_data
+                                else "Unavailable"
+                            )
+
+                            st.write(f"- **Location**: `{location_name}`")
+                            if gps_data:
+                                st.write(
+                                    f"- **Latitude**: `{gps_data.get('latitude', 'N/A')}`"
+                                )
+                                st.write(
+                                    f"- **Longitude**: `{gps_data.get('longitude', 'N/A')}`"
+                                )
+                            else:
+                                st.write("- **Latitude**: `Unavailable`")
+                                st.write("- **Longitude**: `Unavailable`")
+                            if image_date:
+                                st.write(f"- **Date Taken**: `{image_date}`")
 
     if source_img:
         uploaded_image = PIL.Image.open(source_img)

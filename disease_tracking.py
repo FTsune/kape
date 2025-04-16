@@ -9,7 +9,7 @@ DISEASE_COLORS = {
     "rust": "#FF0000",  # Red
     "cercospora": "#00FF00",  # Green
     # "algal-growth": "#0000FF",  # Blue
-    "sooty-mold": "#FFA500",  # Orange
+    "sooty mold": "#FFA500",  # Orange
     # "late-stage-rust": "#800080",  # Purple
     # "abiotic-disorder": "#008080",  # Teal
 }
