@@ -7,18 +7,20 @@ from oauth2client.service_account import ServiceAccountCredentials
 import os
 import json
 
+
 # Authenticate and return a Google Drive instance using Streamlit Secrets
 def authenticate_drive():
     credentials_dict = st.secrets["gcp_service_account"]
     creds = ServiceAccountCredentials.from_json_keyfile_dict(
         credentials_dict, ["https://www.googleapis.com/auth/drive"]
     )
-    
+
     gauth = GoogleAuth()
     gauth.credentials = creds
     drive = GoogleDrive(gauth)
 
     return drive
+
 
 # Upload image to Google Drive in structured folders (Disease/Date)
 def upload_image(image_path, disease_label, drive, parent_folder_id):

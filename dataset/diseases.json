@@ -1,11 +1,11 @@
 [
     {
-      "id": "Image 1",
-      "title": "Algae Growth",
-      "name2": "Foliicolous lichens",
-      "thumbnail": "images/diseases/lichens.jpg",
-      "image": "images/diseases/lichens2.jpg",
-      "description": "Foliicolous lichens are those that grow on the leaves of vascular plants. Such lichens are widespread and are especially common in the tropical areas where there are long periods of high humidity. Many foliicolous species are strictly foliicolous but some may also be found on other plant parts (twigs, branches, trunks) or even non-plant substrates such as rocks."
+    "id": "Image 1",
+    "title": "Abiotic Disorder",
+    "name2": "Abiotic Disorder",
+    "thumbnail": "images/diseases/abiotic2.jpg",
+    "image": "images/diseases/abiotic.jpg",
+    "description": "Abiotic disorders are caused by non-living environmental factors such as drought, temperature extremes, pollution, or nutrient deficiencies. These disorders often mimic the appearance of biotic diseases but are not caused by pathogens. Identifying abiotic stress is essential for effective crop management and long-term plant health."
     },
     {
       "id": "Image 2",

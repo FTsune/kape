@@ -15,7 +15,7 @@ st.set_page_config(
 THEME_COLORS = {
     "LIGHT": {
         "primaryColor": "#41B3A2",
-        "backgroundColor": "white",
+        "backgroundColor": "#fdfdfe",
         "secondaryBackgroundColor": "#fafafa",
         "textColor": "black",
         "logo": "images/logo_light.png",
@@ -40,6 +40,7 @@ def get_theme(is_dark_theme):
     for key, value in theme.items():
         st.config.set_option(f"theme.{key}", value)
     return theme
+
 
 # Set the current theme based on session state
 current_theme = get_theme(st.session_state.dark_theme)
@@ -67,7 +68,7 @@ st.markdown(
 )
 
 # Display the logo using st.image
-st.logo(current_theme["logo"], size='large')
+st.logo(current_theme["logo"], size="large")
 
 # Dynamic styles for option menu
 menu_styles = {
@@ -94,14 +95,15 @@ menu_styles = {
 with stylable_container(
     key="menu_container",
     css_styles=f"""
+        {{
         background-color: {current_theme["backgroundColor"]};
-        padding: 1rem;
-        border-radius: 0.5rem;
+        margin-top: -40px;
+        }}
     """,
 ):
     tab = option_menu(
         None,
-        ["Home", "Dataset", "Map", "Team"], 
+        ["Home", "Dataset", "Map", "Team"],
         icons=["house", "database", "map", "people"],  # Added map icon
         menu_icon="cast",
         default_index=0,

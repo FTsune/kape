@@ -4,6 +4,7 @@ from PIL.ExifTags import TAGS, GPSTAGS
 from datetime import datetime
 from pathlib import Path
 from PIL.ExifTags import TAGS
+from geopy.geocoders import Nominatim
 import piexif
 from modules.database import save_detection_to_database  # Import the database function
 
@@ -137,6 +138,16 @@ def get_image_taken_time(image_file):
             has_warned_about_date_taken = True
 
     return None
+
+
+def get_location_name(latitude, longitude):
+    """Return a human-readable location name from GPS coordinates."""
+    try:
+        geolocator = Nominatim(user_agent="brewguard")
+        location = geolocator.reverse((latitude, longitude), language="en")
+        return location.address if location else "Unknown location"
+    except Exception as e:
+        return f"Unable to retrieve location ({e})"
 
 
 # Default return if no timestamp is found

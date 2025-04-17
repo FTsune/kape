@@ -68,7 +68,7 @@ def save_detection_to_database(disease_name, confidence, gps_data, date_taken):
         (gps_data or {}).get("longitude", "N/A"),
         (gps_data or {}).get("altitude", "N/A"),
     ]
-
+    print(f"Writing to sheet: {worksheet.title}")
     # Append data to Google Sheets
     worksheet.append_row(entry)
 

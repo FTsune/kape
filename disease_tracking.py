@@ -8,14 +8,18 @@ from modules.database import fetch_all_locations  # Fetch data from Google Sheet
 DISEASE_COLORS = {
     "rust": "#FF0000",  # Red
     "cercospora": "#00FF00",  # Green
-    "algal-growth": "#0000FF",  # Blue
-    "sooty-mold": "#FFA500",  # Orange
-    "late-stage-rust": "#800080",  # Purple
-    "abiotic-disorder": "#008080",  # Teal
+    # "algal-growth": "#0000FF",  # Blue
+    "sooty mold": "#FFA500",  # Orange
+    # "late-stage-rust": "#800080",  # Purple
+    # "abiotic-disorder": "#008080",  # Teal
 }
 
+
 def main(theme_colors=None):
-    st.info("Disease markers may overlap; zoom in for a clearer view.", icon=":material/info:")
+    st.info(
+        "Disease markers may overlap; zoom in for a clearer view.",
+        icon=":material/info:",
+    )
 
     # Fetch data from Google Sheets
     locations = fetch_all_locations()
@@ -46,25 +50,38 @@ def main(theme_colors=None):
     df["month"] = df["timestamp"].dt.month
 
     month_map = {
-        1: "January", 2: "February", 3: "March", 4: "April",
-        5: "May", 6: "June", 7: "July", 8: "August",
-        9: "September", 10: "October", 11: "November", 12: "December"
+        1: "January",
+        2: "February",
+        3: "March",
+        4: "April",
+        5: "May",
+        6: "June",
+        7: "July",
+        8: "August",
+        9: "September",
+        10: "October",
+        11: "November",
+        12: "December",
     }
 
     df["month_name"] = df["month"].map(month_map)
 
-    coord_counts = df.groupby(['latitude', 'longitude']).size().reset_index(name='count')
+    coord_counts = (
+        df.groupby(["latitude", "longitude"]).size().reset_index(name="count")
+    )
     for idx, row in coord_counts.iterrows():
-        mask = (df['latitude'] == row['latitude']) & (df['longitude'] == row['longitude'])
-        if row['count'] > 1:
+        mask = (df["latitude"] == row["latitude"]) & (
+            df["longitude"] == row["longitude"]
+        )
+        if row["count"] > 1:
             jitter_amount = 0.0001
             jitter_lats = np.random.uniform(-jitter_amount, jitter_amount, mask.sum())
             jitter_longs = np.random.uniform(-jitter_amount, jitter_amount, mask.sum())
-            df.loc[mask, 'display_lat'] = df.loc[mask, 'latitude'] + jitter_lats
-            df.loc[mask, 'display_long'] = df.loc[mask, 'longitude'] + jitter_longs
+            df.loc[mask, "display_lat"] = df.loc[mask, "latitude"] + jitter_lats
+            df.loc[mask, "display_long"] = df.loc[mask, "longitude"] + jitter_longs
         else:
-            df.loc[mask, 'display_lat'] = df.loc[mask, 'latitude']
-            df.loc[mask, 'display_long'] = df.loc[mask, 'longitude']
+            df.loc[mask, "display_lat"] = df.loc[mask, "latitude"]
+            df.loc[mask, "display_long"] = df.loc[mask, "longitude"]
 
     col1, col2 = st.columns([0.7, 0.3])
 
@@ -76,12 +93,14 @@ def main(theme_colors=None):
                 "Select Disease Type", ["All"] + sorted(df["disease detected"].unique())
             )
 
-            years = sorted(df['year'].dropna().unique().astype(int))
+            years = sorted(df["year"].dropna().unique().astype(int))
 
             filter_col = st.columns(2)
 
             with filter_col[0]:
-                selected_year = st.selectbox("Select Year", ["All"] + [str(year) for year in years])
+                selected_year = st.selectbox(
+                    "Select Year", ["All"] + [str(year) for year in years]
+                )
 
             # Show month filter only if year is selected
             # selected_month = None
@@ -96,7 +115,9 @@ def main(theme_colors=None):
 
             filtered_df = df.copy()
             if disease_filter != "All":
-                filtered_df = filtered_df[filtered_df["disease detected"] == disease_filter]
+                filtered_df = filtered_df[
+                    filtered_df["disease detected"] == disease_filter
+                ]
             if selected_year != "All":
                 filtered_df = filtered_df[filtered_df["year"] == int(selected_year)]
                 # if selected_month is not None:
@@ -113,7 +134,9 @@ def main(theme_colors=None):
                     f"</div>",
                     unsafe_allow_html=True,
                 )
-            st.markdown("<div style='margin-bottom:20px;'></div>", unsafe_allow_html=True)
+            st.markdown(
+                "<div style='margin-bottom:20px;'></div>", unsafe_allow_html=True
+            )
 
     with col1:
         with st.container(border=True):
@@ -132,7 +155,7 @@ def main(theme_colors=None):
                     hover_data=["confidence", "latitude", "longitude"],
                     zoom=5,
                     size_max=15,
-                    opacity=0.8
+                    opacity=0.8,
                 )
 
                 fig.update_layout(
@@ -145,8 +168,8 @@ def main(theme_colors=None):
                         y=0.99,
                         xanchor="left",
                         x=0.01,
-                        bgcolor="rgba(255, 255, 255, 0.8)"
-                    )
+                        bgcolor="rgba(255, 255, 255, 0.8)",
+                    ),
                 )
                 st.plotly_chart(fig, use_container_width=True)
             else:
@@ -157,25 +180,30 @@ def main(theme_colors=None):
 
             if not filtered_df.empty:
                 time_series = (
-                    filtered_df.groupby([filtered_df['timestamp'].dt.to_period('M'), 'disease detected'])
+                    filtered_df.groupby(
+                        [filtered_df["timestamp"].dt.to_period("M"), "disease detected"]
+                    )
                     .size()
-                    .reset_index(name='count')
+                    .reset_index(name="count")
                 )
-                time_series['timestamp'] = time_series['timestamp'].astype(str)
+                time_series["timestamp"] = time_series["timestamp"].astype(str)
 
                 fig_line = px.line(
                     time_series,
-                    x='timestamp',
-                    y='count',
-                    color='disease detected',
+                    x="timestamp",
+                    y="count",
+                    color="disease detected",
                     title="Disease Reports",
                     markers=True,
-                    color_discrete_map=DISEASE_COLORS
+                    color_discrete_map=DISEASE_COLORS,
                 )
-                fig_line.update_layout(xaxis_title="Date", yaxis_title="Occurrence Count")
+                fig_line.update_layout(
+                    xaxis_title="Date", yaxis_title="Occurrence Count"
+                )
                 st.plotly_chart(fig_line, use_container_width=True)
             else:
                 st.info("No data available for time-series visualization.")
+
 
 if __name__ == "__main__":
     default_theme = {
