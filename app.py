@@ -15,7 +15,7 @@ st.set_page_config(
 THEME_COLORS = {
     "LIGHT": {
         "primaryColor": "#41B3A2",
-        "backgroundColor": "white",
+        "backgroundColor": "#fdfdfe",
         "secondaryBackgroundColor": "#fafafa",
         "textColor": "black",
         "logo": "images/logo_light.png",
@@ -95,9 +95,10 @@ menu_styles = {
 with stylable_container(
     key="menu_container",
     css_styles=f"""
+        {{
         background-color: {current_theme["backgroundColor"]};
-        padding: 1rem;
-        border-radius: 0.5rem;
+        margin-top: -40px;
+        }}
     """,
 ):
     tab = option_menu(

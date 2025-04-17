@@ -222,6 +222,86 @@ def generate_preview_image(
         st.warning(f"Auto-preview failed: {e}")
         return uploaded_image
 
+def detect_labels_only(
+    uploaded_image,
+    model_type,
+    model,
+    model_leaf,
+    model_disease,
+    confidence,
+    overlap_threshold,
+):
+    from modules.processing import non_max_suppression
+    detections = []
+
+    def process_boxes(res, labels):
+        boxes = non_max_suppression(res[0].boxes, overlap_threshold)
+        return [normalize_label(labels[int(box.cls[0])]) for box in boxes]
+
+    if model_type == "Disease":
+        if isinstance(model, tuple):
+            res1 = model[0].predict(uploaded_image, conf=confidence)
+            detections += process_boxes(res1, res1[0].names)
+            res2 = model[1].predict(uploaded_image, conf=confidence)
+            detections += process_boxes(res2, res2[0].names)
+        else:
+            res = model.predict(uploaded_image, conf=confidence)
+            detections += process_boxes(res, res[0].names)
+
+    elif model_type == "Both Models":
+        if isinstance(model_disease, tuple):
+            res1 = model_disease[0].predict(uploaded_image, conf=confidence)
+            detections += process_boxes(res1, res1[0].names)
+            res2 = model_disease[1].predict(uploaded_image, conf=confidence)
+            detections += process_boxes(res2, res2[0].names)
+        else:
+            res = model_disease.predict(uploaded_image, conf=confidence)
+            detections += process_boxes(res, res[0].names)
+
+    return detections
+    
+def detect_with_confidence(
+    uploaded_image,
+    model_type,
+    model,
+    model_leaf,
+    model_disease,
+    confidence,
+    overlap_threshold,
+):
+    """Detect diseases with confidence scores"""
+    from modules.processing import non_max_suppression
+    
+    detections = []
+
+    def process_boxes(res, labels):
+        boxes = non_max_suppression(res[0].boxes, overlap_threshold)
+        current_detections = []
+        for box in boxes:
+            class_id = int(box.cls[0])
+            score = round(float(box.conf[0]) * 100, 1)
+            raw_name = labels[class_id]
+            name = normalize_label(raw_name)
+            current_detections.append((name, score))
+        return current_detections
+
+    if model_type in ["Disease", "Both Models"]:
+        used_model = model if model_type == "Disease" else model_disease
+
+        if isinstance(used_model, tuple):
+            # For tuple models (like Spots + Full Leaf), process both models
+            res1 = used_model[0].predict(uploaded_image, conf=confidence)
+            detections.extend(process_boxes(res1, res1[0].names))
+            
+            res2 = used_model[1].predict(uploaded_image, conf=confidence)
+            detections.extend(process_boxes(res2, res2[0].names))
+        else:
+            # For single models
+            res = used_model.predict(uploaded_image, conf=confidence)
+            detections.extend(process_boxes(res, res[0].names))
+
+    # Return all detections without filtering
+    return detections
 
 def normalize_label(label: str) -> str:
     # Use this function only for saving text/database entries.
@@ -229,6 +309,18 @@ def normalize_label(label: str) -> str:
     if label.lower() == "late-stage-rust":
         return "rust"
     return label
+
+# Add this function to modules/image_uploader.py
+def check_image_exists(drive, folder_id, filename):
+    """Check if an image with the same name already exists in the Drive folder"""
+    try:
+        query = f"name = '{filename}' and '{folder_id}' in parents and trashed = false"
+        results = drive.files().list(q=query, fields="files(id, name)").execute()
+        files = results.get('files', [])
+        return len(files) > 0
+    except Exception as e:
+        # If there's an error checking, assume it doesn't exist
+        return False
 
 
 def _upload_image_once(uploaded_image, name, drive, parent_folder_id):
