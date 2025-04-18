@@ -29,6 +29,6 @@ DISEASE_MODEL_SPOTS = MODEL_DIR / "spots.pt"  # old name: DISEASE_DETECTION_MODE
 DISEASE_MODEL_FULL_LEAF = (
     MODEL_DIR / "full_leaf(1).pt"
 )  # old name: NEW_DISEASE_DETECTION_MODEL
-DISEASE_MODEL_YOLO11M = MODEL_DIR / "yolo11m-v2.pt"  # unified disease model
+DISEASE_MODEL_YOLO11M = MODEL_DIR / "yolo11m-full_leaf.pt"  # unified disease model
 
 LEAF_MODEL = MODEL_DIR / "cleaf.pt"  # unchanged
