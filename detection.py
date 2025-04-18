@@ -687,14 +687,14 @@ def main(theme_colors):
                         
                         if total_count == unique_count:
                             st.markdown(f"""
-                            <div style="width: 300px; padding: 20px; background-color: {secondary_background_color}; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); margin: 20px auto;">
+                            <div style="width: 150px; padding: 20px; background-color: {secondary_background_color}; border-radius: 10px; text-align: center; margin: 20px auto;">
                                 <div style="font-size: 36px; font-weight: 600; color: {primary_color}; margin: 0; padding: 0;">{unique_count}</div>
                                 <div style="font-size: 14px; color: {text_color}80; margin-top: -10px;">Diseases Detected</div>
                             </div>
                             """, unsafe_allow_html=True)
                         else:
                             st.markdown(f"""
-                            <div style="width: 300px; padding: 20px; background-color: {secondary_background_color}; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); margin: 20px auto;">
+                            <div style="width: 150px; padding: 20px; background-color: {secondary_background_color}; border-radius: 10px; text-align: center; margin: 20px auto;">
                                 <div style="font-size: 36px; font-weight: 600; color: {primary_color}; margin: 0; padding: 0;">{total_count}</div>
                                 <div style="font-size: 14px; color: {text_color}80; margin-top: -10px;">Classes Detected</div>
                                 <div style="font-size: 13.5px; color: {text_color}80; margin-top: -5px;"><span style="color: {primary_color}; font-weight: 600;">{unique_count}</span> Unique Type(s)</div>
@@ -713,12 +713,14 @@ def main(theme_colors):
                                 if count > 1:
                                     st.markdown(f"""
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; margin-right: 30px;">
-                                        <div style="display: flex; align-items: center;">
-                                            <span style="margin-right: 10px;">•</span>
-                                            <span style="font-weight: 600; font-size: 16px;">{disease.title()}</span>
-                                            <span style="margin-left: 8px; font-size: 16px;">{count} instances</span>
+                                        <div>
+                                            <div style="display: flex; align-items: center;">
+                                                <span style="margin-right: 10px;">•</span>
+                                                <span style="font-weight: 600; font-size: 16px;">{disease.title()}</span>
+                                            </div>
+                                            <div style="margin:-5px 15px 10px; font-size: 14px;">{count} instances</div>
                                         </div>
-                                        <div style="color: {text_color}80; font-size: 16px;">Highest Confidence: <span style="font-weight: 600; color: {primary_color}">{confidence:.1f}%</span></div>
+                                        <div style="color: {text_color}80; font-size: 16px;">Confidence: <span style="font-weight: 600; color: {primary_color}">{confidence:.1f}%</span></div>
                                     </div>
                                     """, unsafe_allow_html=True)
                                 else:
@@ -728,7 +730,7 @@ def main(theme_colors):
                                             <span style="margin-right: 10px;">•</span>
                                             <span style="font-weight: 600; font-size: 16px;">{disease.title()}</span>
                                         </div>
-                                        <div style="color: {text_color}80; font-size: 16px;">Highest Confidence: <span style="font-weight: 600; color: {primary_color}">{confidence:.1f}%</span></div>
+                                        <div style="color: {text_color}80; font-size: 16px;">Confidence: <span style="font-weight: 600; color: {primary_color}">{confidence:.1f}%</span></div>
                                     </div>
                                     """, unsafe_allow_html=True)
                                     # st.markdown(f"- **{disease.title()}** - Highest Confidence: **{confidence:.1f}%**")
@@ -804,7 +806,8 @@ def main(theme_colors):
                                 elif drive_button_disabled and image_exists:
                                     st.warning("⚠️ This image already exists in Google Drive")
                         else:
-                            st.info("No diseases detected in this image")
+                            with st.container():
+                                st.info("No diseases detected in this image")
                 
                 elif tab == "Detailed Analysis":
                     if source_img is None:
