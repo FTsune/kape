@@ -6,12 +6,12 @@ from modules.database import fetch_all_locations  # Fetch data from Google Sheet
 
 # Define colors for different diseases (Hex format for Plotly)
 DISEASE_COLORS = {
-    "rust": "#FF0000",  # Red
-    "cercospora": "#00FF00",  # Green
+    "rust": "#ffa500",  # Orange
+    "cercospora": "#FF0000",  # Red
     # "algal-growth": "#0000FF",  # Blue
-    "sooty mold": "#FFA500",  # Orange
+    "sooty mold": "#008080",  # Teal
     # "late-stage-rust": "#800080",  # Purple
-    # "abiotic-disorder": "#008080",  # Teal
+    # "abiotic-disorder": "#ffff00",  # Yellow
 }
 
 

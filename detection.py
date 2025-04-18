@@ -1,74 +1,37 @@
 import streamlit as st
-from pathlib import Path
 import PIL
-from PIL import Image
-import pandas as pd
-import numpy as np
-import settings
-import helper
-import uuid
-import os
 import hashlib
-import json
-import time
+import settings
 import streamlit_antd_components as sac
 from streamlit_extras.stylable_container import stylable_container
 from streamlit_option_menu import option_menu
+from collections import Counter, defaultdict
 
+# Import modularized components
+from modules.detection_utils import (
+    initialize_session_state,
+    check_config_changed,
+    get_cache_key,
+    run_detection
+)
+from modules.batch_processing import process_all_images
+from modules.cache_management import clear_cache, get_cache_size, limit_cache_size
 from modules.gps_utils import (
-get_gps_location,
-get_image_taken_time,
-get_location_name,
-save_location_data,
+    get_gps_location,
+    get_image_taken_time,
+    get_location_name,
+    save_location_data,
 )
-from modules.processing import non_max_suppression
-from modules.visualizations import draw_bounding_boxes
-from modules.image_uploader import authenticate_drive, upload_image
-from modules.detection_runner import (
-generate_preview_image, 
-detect_labels_only,
-handle_detection,
-save_prediction_if_valid,
-detect_and_save_silently,
-_upload_image_once,
-check_image_exists
-)
+from modules.image_uploader import authenticate_drive
+from modules.detection_runner import check_image_exists, _upload_image_once
 
 
 def main(theme_colors):
-    if "dark_theme" not in st.session_state:
-        st.session_state.dark_theme = False
-
-    if "detected_diseases" not in st.session_state:
-        st.session_state.detected_diseases = []
-
-    if "disease_confidences" not in st.session_state:
-        st.session_state.disease_confidences = {}
-        
-    if "all_disease_instances" not in st.session_state:
-        st.session_state.all_disease_instances = []
-        
-    if "saved_to_database" not in st.session_state:
-        st.session_state.saved_to_database = False
-        
-    if "saved_to_drive" not in st.session_state:
-        st.session_state.saved_to_drive = False
-        
-    # Track model configuration for redetection
-    if "last_model_config" not in st.session_state:
-        st.session_state.last_model_config = {}
-        
-    # Track if detection has been run
-    if "detection_run" not in st.session_state:
-        st.session_state.detection_run = False
-        
-    # Track if detection is in progress
-    if "detection_in_progress" not in st.session_state:
-        st.session_state.detection_in_progress = False
-
-    # Add a new session state variable to store detection results for each image
-    if "image_detection_cache" not in st.session_state:
-        st.session_state.image_detection_cache = {}
+    # Initialize session state variables
+    initialize_session_state()
+    
+    # Limit cache size to prevent memory issues
+    limit_cache_size(max_entries=50)
 
     # File uploader
     st.sidebar.write('Upload Image(s)')
@@ -179,7 +142,7 @@ def main(theme_colors):
             unsafe_allow_html=True
         )
 
-    save_to_drive = st.sidebar.checkbox("📤 Save samples to improve the model")
+    # save_to_drive = st.sidebar.checkbox("📤 Save samples to improve the model")
 
     # Create current model configuration dictionary
     current_model_config = {
@@ -330,13 +293,7 @@ def main(theme_colors):
                         st.session_state.last_model_config = {}  # Reset model config on new image
 
             # Check if model configuration has changed
-            config_changed = False
-            if st.session_state.detection_run:
-                # Compare current config with last used config
-                for key, value in current_model_config.items():
-                    if key not in st.session_state.last_model_config or st.session_state.last_model_config[key] != value:
-                        config_changed = True
-                        break
+            config_changed = check_config_changed(current_model_config)
 
             col1, col2 = st.columns(2)
 
@@ -377,9 +334,7 @@ def main(theme_colors):
                             use_column_width=True,
                         )
 
-            # Modify the detection logic in the col2 section to check the cache first
-            # Replace the existing detection code in col2 with this improved version:
-
+            # Handle detection in col2
             with col2:
                 with stylable_container(
                     key="container_with_border_right",
@@ -401,13 +356,8 @@ def main(theme_colors):
                             use_column_width=True,
                         )
                     else:
-                        # Generate a hash for the current image and model configuration
-                        image_bytes = source_img.getvalue()
-                        image_hash = hashlib.md5(image_bytes).hexdigest()
-                        
-                        # Create a combined key for the cache that includes both image and model config
-                        config_str = json.dumps(current_model_config, sort_keys=True)
-                        cache_key = f"{image_hash}_{hashlib.md5(config_str.encode()).hexdigest()}"
+                        # Get cache key for this image and configuration
+                        cache_key = get_cache_key(source_img, current_model_config)
                         
                         # Check if we have cached results for this image + config combination
                         if cache_key in st.session_state.image_detection_cache:
@@ -465,125 +415,56 @@ def main(theme_colors):
                                         
                                         # Use Streamlit's native spinner
                                         with col2_placeholder.container():
-                                            with st.spinner("Processing image..."):
-                                                # Create a progress bar that fills up during detection
-                                                progress_bar = st.progress(0)
+                                            status_text = st.empty()
+                                            status_text.text("Processing image...")
+                                            # Create a progress bar that fills up during detection
+                                            progress_bar = st.progress(0)
+                                        
+                                        try:
+                                            # Run detection with progress updates
+                                            def update_progress(value, message):
+                                                try:
+                                                    progress_bar.progress(value, message)
+                                                    status_text.text(message)
+                                                except Exception as e:
+                                                    # Silently handle progress bar errors
+                                                    pass
+
+                                            results = run_detection(
+                                                source_img, 
+                                                current_model_config,
+                                                update_progress
+                                            )
+
+                                            if results and results.get("result_image") is not None:
+                                                # Store results in session state
+                                                st.session_state["detected_diseases"] = results.get("detected_diseases", [])
+                                                st.session_state["all_disease_detections"] = results.get("all_disease_detections", [])
+                                                st.session_state["disease_confidences"] = results.get("disease_confidences", {})
+                                                st.session_state["all_disease_instances"] = results.get("all_disease_instances", [])
+                                                st.session_state["last_result_image"] = results["result_image"]
                                                 
-                                                # Load models based on configuration
-                                                progress_bar.progress(10, "Loading models...")
-                                                model = model_leaf = model_disease = None
-
-                                                if detection_model_choice == "Disease":
-                                                    if disease_model_mode == "YOLOv11m - Full Leaf":
-                                                        model = helper.load_model(
-                                                            Path(settings.DISEASE_MODEL_YOLO11M)
-                                                        )
-                                                    else:
-                                                        model = (
-                                                            helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
-                                                            helper.load_model(
-                                                                Path(settings.DISEASE_MODEL_FULL_LEAF)
-                                                            ),
-                                                        )
-                                                    model_leaf = model_disease = None
-
-                                                elif detection_model_choice == "Both Models":
-                                                    if disease_model_mode == "YOLOv11m - Full Leaf":
-                                                        model_disease = helper.load_model(
-                                                            Path(settings.DISEASE_MODEL_YOLO11M)
-                                                        )
-                                                    else:
-                                                        model_disease = (
-                                                            helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
-                                                            helper.load_model(
-                                                                Path(settings.DISEASE_MODEL_FULL_LEAF)
-                                                            ),
-                                                        )
-                                                    model_leaf = helper.load_model(Path(settings.LEAF_MODEL))
-                                                    model = None
-
-                                                progress_bar.progress(40, "Preparing image...")
-                                                st.session_state["uploaded_image"] = uploaded_image
-                                                
-                                                # Auto-generate preview (no saving)
-                                                progress_bar.progress(60, "Running detection...")
-                                                uploaded_image = PIL.Image.open(source_img)
-                                                preview_image = generate_preview_image(
-                                                    uploaded_image,
-                                                    detection_model_choice,
-                                                    model if detection_model_choice != "Both Models" else None,
-                                                    model_leaf
-                                                    if detection_model_choice == "Both Models"
-                                                    else None,
-                                                    model_disease
-                                                    if detection_model_choice == "Both Models"
-                                                    else None,
-                                                    confidence,
-                                                    overlap_threshold,
-                                                    cdisease_colors,
-                                                    cleaf_colors,
-                                                )
-                                                
-                                                progress_bar.progress(80, "Processing results...")
-                                                st.session_state["last_result_image"] = preview_image
-                                                
-                                                # Process detections with confidence levels
-                                                from modules.detection_runner import detect_with_confidence
-
-                                                # Get all detections with confidence
-                                                detections_with_confidence = detect_with_confidence(
-                                                    uploaded_image,
-                                                    detection_model_choice,
-                                                    model if detection_model_choice != "Both Models" else None,
-                                                    model_leaf if detection_model_choice == "Both Models" else None,
-                                                    model_disease if detection_model_choice == "Both Models" else None,
-                                                    confidence,
-                                                    overlap_threshold
-                                                )
-
-                                                # Store all unique diseases (don't filter by highest confidence)
-                                                unique_diseases = set()
-                                                disease_dict = {}
-                                                all_detections = []  # Store all detections including duplicates
-
-                                                # Store all instances with their individual confidence levels
-                                                all_instances = []
-                                                
-                                                for disease, conf in detections_with_confidence:
-                                                    unique_diseases.add(disease)
-                                                    all_detections.append(disease)  # Keep track of all instances
-                                                    all_instances.append((disease, conf))  # Store each instance with its confidence
-                                                    
-                                                    # For each disease, store the highest confidence score
-                                                    if disease not in disease_dict or conf > disease_dict[disease]:
-                                                        disease_dict[disease] = conf
-
-                                                st.session_state["detected_diseases"] = list(unique_diseases)
-                                                st.session_state["all_disease_detections"] = all_detections  # Store all instances
-                                                st.session_state["disease_confidences"] = disease_dict
-                                                st.session_state["all_disease_instances"] = all_instances  # Store all instances with confidence
-                                                
-                                                # Cache the detection results for this image + config combination
-                                                st.session_state.image_detection_cache[cache_key] = {
-                                                    "result_image": preview_image,
-                                                    "detected_diseases": list(unique_diseases),
-                                                    "all_disease_detections": all_detections,
-                                                    "disease_confidences": disease_dict,
-                                                    "all_disease_instances": all_instances
-                                                }
+                                                # Cache the detection results
+                                                st.session_state.image_detection_cache[cache_key] = results
                                                 
                                                 # Mark detection as run and save the current model config
-                                                progress_bar.progress(100, "Complete!")
                                                 st.session_state.detection_run = True
-                                                st.session_state.detection_in_progress = False
                                                 st.session_state.last_model_config = current_model_config.copy()
-                                    
-                                    # Display the result image after processing
-                                    col2_placeholder.image(
-                                        preview_image,
-                                        caption="Detected Image",
-                                        use_column_width=True,
-                                    )
+                                                
+                                                # Display the result image
+                                                preview_image = results["result_image"]
+                                                col2_placeholder.image(
+                                                    preview_image,
+                                                    caption="Detected Image",
+                                                    use_column_width=True,
+                                                )
+                                            else:
+                                                st.error("Detection failed. Please try again.")
+                                        except Exception as e:
+                                            st.error(f"An error occurred during detection: {str(e)}")
+                                        finally:
+                                            # Always mark detection as no longer in progress
+                                            st.session_state.detection_in_progress = False
             
             # Add pagination AFTER the image columns
             if uploaded_images and len(uploaded_images) > 1:
@@ -698,13 +579,11 @@ def main(theme_colors):
                                 <div style="font-size: 36px; font-weight: 600; color: {primary_color}; margin: 0; padding: 0;">{total_count}</div>
                                 <div style="font-size: 14px; color: {text_color}80; margin-top: -10px;">Classes Detected</div>
                                 <div style="font-size: 13.5px; color: {text_color}80; margin-top: -5px;"><span style="color: {primary_color}; font-weight: 600;">{unique_count}</span> Unique Type(s)</div>
-                                <p style="font
                             </div>
                             """, unsafe_allow_html=True)
                         
                         if detected_diseases:
                             # Build a counter for each disease
-                            from collections import Counter
                             disease_counter = Counter(all_detections)
                             
                             for disease in detected_diseases:
@@ -733,7 +612,6 @@ def main(theme_colors):
                                         <div style="color: {text_color}80; font-size: 16px;">Confidence: <span style="font-weight: 600; color: {primary_color}">{confidence:.1f}%</span></div>
                                     </div>
                                     """, unsafe_allow_html=True)
-                                    # st.markdown(f"- **{disease.title()}** - Highest Confidence: **{confidence:.1f}%**")
                                 
                             # Check if only "healthy" is detected
                             only_healthy = len(detected_diseases) == 1 and detected_diseases[0].lower() == "healthy"
@@ -825,7 +703,7 @@ def main(theme_colors):
                             else "Unavailable"
                         )
 
-                        st.markdown("#### Image Metadata")
+                        st.markdown("##### Image Metadata")
                         st.write(f"- **Location**: `{location_name}`")
                         if gps_data:
                             st.write(
@@ -841,12 +719,12 @@ def main(theme_colors):
                             st.write(f"- **Date Taken**: `{image_date}`")
                         
                         # Show all disease instances with their individual confidence levels
-                        st.markdown("#### All Disease Instances")
-                        
+                        st.markdown(f"""<div style="margin: 10px 15px 10px 5px; font-size: 20px; font-weight: 600; color: {primary_color}">
+                                    All Instances
+                                    </div>""", unsafe_allow_html=True)
                         all_instances = st.session_state.get("all_disease_instances", [])
                         if all_instances:
                             # Group instances by disease type for better organization
-                            from collections import defaultdict
                             grouped_instances = defaultdict(list)
                             
                             for disease, confidence in all_instances:
@@ -862,75 +740,16 @@ def main(theme_colors):
                         else:
                             st.info("No disease instances detected in this image")
 
-    if uploaded_images and st.sidebar.button("📦 Save All Uploaded Images"):
-        with st.spinner("Running detection and saving..."):
-            status_text = st.empty()
-            progress = st.progress(0)
-            total = len(uploaded_images)
-
-            # Load models once
-            disease_model_mode = st.session_state.get(
-                "disease_model_mode", "Default (Spots + Full Leaf)"
-            )
-
-            if detection_model_choice == "Disease":
-                if disease_model_mode == "YOLOv11m - Full Leaf":
-                    model = helper.load_model(Path(settings.DISEASE_MODEL_YOLO11M))
-                else:
-                    model = (
-                        helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
-                        helper.load_model(Path(settings.DISEASE_MODEL_FULL_LEAF)),
-                    )
-                model_leaf = model_disease = None
-
-            elif detection_model_choice == "Both Models":
-                if disease_model_mode == "YOLOv11m - Full Leaf":
-                    model_disease = helper.load_model(
-                        Path(settings.DISEASE_MODEL_YOLO11M)
-                    )
-                else:
-                    model_disease = (
-                        helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
-                        helper.load_model(Path(settings.DISEASE_MODEL_FULL_LEAF)),
-                    )
-                model_leaf = helper.load_model(Path(settings.LEAF_MODEL))
-                model = None
-
-            for idx, file in enumerate(uploaded_images):
-                try:
-                    status_text.markdown(f"**Detecting and saving:** `{file.name}`")
-                    image = PIL.Image.open(file)
-                    gps_data = get_gps_location(file)
-
-                    # Run detection
-                    best_label, score = detect_and_save_silently(
-                        uploaded_image=image,
-                        image_file=file,
-                        gps_data=gps_data,
-                        model_type=detection_model_choice,
-                        model=model,
-                        model_leaf=model_leaf,
-                        model_disease=model_disease,
-                        confidence=confidence,
-                        overlap_threshold=overlap_threshold,
-                        save_to_drive=save_to_drive,  # <- still passed in
-                        drive=drive,
-                        parent_folder_id=PARENT_FOLDER_ID,
-                        cdisease_colors=cdisease_colors,
-                        cleaf_colors=cleaf_colors,
-                    )
-
-                    if best_label != "No Detection":
-                        st.success(f"✅ Saved: {file.name} ({best_label}, {score}%)")
-                    else:
-                        st.info(f"ℹ️ Skipped: {file.name} — No disease detected.")
-
-                except Exception as e:
-                    st.error(f"❌ Failed: {file.name}: {e}")
-
-                progress.progress((idx + 1) / total)
-
-            status_text.markdown("✅ **All images processed and saved.**")
+    # Cache management in sidebar
+    if get_cache_size() > 0:
+        st.sidebar.divider()
+        st.sidebar.header("CACHE MANAGEMENT")
+        st.sidebar.write(f"Cache size: {get_cache_size()} images")
+        if st.sidebar.button("🧹 Clear Detection Cache"):
+            if clear_cache():
+                st.sidebar.success("Cache cleared successfully!")
+            else:
+                st.sidebar.error("Failed to clear cache.")
 
 
 if __name__ == "__main__":
