@@ -17,14 +17,14 @@ THEME_COLORS = {
         "primaryColor": "#41B3A2",
         "backgroundColor": "#fdfdfe",
         "secondaryBackgroundColor": "#fafafa",
-        "textColor": "black",
+        "textColor": "#000000",
         "logo": "images/logo_light.png",
     },
     "DARK": {
         "primaryColor": "#00fecd",
         "backgroundColor": "#111827",
         "secondaryBackgroundColor": "#141b2a",
-        "textColor": "white",
+        "textColor": "#ffffff",
         "logo": "images/logo_dark.png",
     },
 }
