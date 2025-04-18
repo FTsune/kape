@@ -16,32 +16,32 @@ from streamlit_extras.stylable_container import stylable_container
 from streamlit_option_menu import option_menu
 
 from modules.gps_utils import (
-    get_gps_location,
-    get_image_taken_time,
-    get_location_name,
-    save_location_data,
+get_gps_location,
+get_image_taken_time,
+get_location_name,
+save_location_data,
 )
 from modules.processing import non_max_suppression
 from modules.visualizations import draw_bounding_boxes
 from modules.image_uploader import authenticate_drive, upload_image
 from modules.detection_runner import (
-    generate_preview_image, 
-    detect_labels_only,
-    handle_detection,
-    save_prediction_if_valid,
-    detect_and_save_silently,
-    _upload_image_once,
-    check_image_exists
+generate_preview_image, 
+detect_labels_only,
+handle_detection,
+save_prediction_if_valid,
+detect_and_save_silently,
+_upload_image_once,
+check_image_exists
 )
 
 
 def main(theme_colors):
     if "dark_theme" not in st.session_state:
         st.session_state.dark_theme = False
-    
+
     if "detected_diseases" not in st.session_state:
         st.session_state.detected_diseases = []
-    
+
     if "disease_confidences" not in st.session_state:
         st.session_state.disease_confidences = {}
         
@@ -65,6 +65,10 @@ def main(theme_colors):
     # Track if detection is in progress
     if "detection_in_progress" not in st.session_state:
         st.session_state.detection_in_progress = False
+
+    # Add a new session state variable to store detection results for each image
+    if "image_detection_cache" not in st.session_state:
+        st.session_state.image_detection_cache = {}
 
     # File uploader
     st.sidebar.write('Upload Image(s)')
@@ -373,6 +377,9 @@ def main(theme_colors):
                             use_column_width=True,
                         )
 
+            # Modify the detection logic in the col2 section to check the cache first
+            # Replace the existing detection code in col2 with this improved version:
+
             with col2:
                 with stylable_container(
                     key="container_with_border_right",
@@ -390,20 +397,50 @@ def main(theme_colors):
                         default_image = PIL.Image.open(detected_image_path)
                         col2_placeholder.image(
                             default_image,
-                            caption="Sample Image: Objects Detected",
+                            caption="Sample Image: Detected",
                             use_column_width=True,
                         )
                     else:
-                        # Show redetect button if config changed and detection was already run
-                        if config_changed and st.session_state.detection_run:
-                            redetect_col1, redetect_col2, redetect_col3 = st.columns([1, 2, 1])
-                            with redetect_col2:
-                                if st.button("🔄 Redetect with New Configuration", use_container_width=True):
-                                    # Reset detection results
-                                    st.session_state["last_result_image"] = None
-                                    st.session_state.detection_run = False
-                                    st.session_state.detection_in_progress = True
-                                    st.rerun()  # Rerun to apply new detection
+                        # Generate a hash for the current image and model configuration
+                        image_bytes = source_img.getvalue()
+                        image_hash = hashlib.md5(image_bytes).hexdigest()
+                        
+                        # Create a combined key for the cache that includes both image and model config
+                        config_str = json.dumps(current_model_config, sort_keys=True)
+                        cache_key = f"{image_hash}_{hashlib.md5(config_str.encode()).hexdigest()}"
+                        
+                        # Check if we have cached results for this image + config combination
+                        if cache_key in st.session_state.image_detection_cache:
+                            # Use cached results
+                            cached_data = st.session_state.image_detection_cache[cache_key]
+                            
+                            # Display the cached detection image
+                            col2_placeholder.image(
+                                cached_data["result_image"],
+                                caption="Detected Image",
+                                use_column_width=True,
+                            )
+                            
+                            # Restore all the detection results from cache
+                            st.session_state["detected_diseases"] = cached_data["detected_diseases"]
+                            st.session_state["all_disease_detections"] = cached_data["all_disease_detections"]
+                            st.session_state["disease_confidences"] = cached_data["disease_confidences"]
+                            st.session_state["all_disease_instances"] = cached_data["all_disease_instances"]
+                            st.session_state["last_result_image"] = cached_data["result_image"]
+                            st.session_state.detection_run = True
+                            st.session_state.last_model_config = current_model_config.copy()
+                            
+                        else:
+                            # Show redetect button if config changed and detection was already run
+                            if config_changed and st.session_state.detection_run:
+                                redetect_col1, redetect_col2, redetect_col3 = st.columns([1, 2, 1])
+                                with redetect_col2:
+                                    if st.button("🔄 Reanalyze objects", use_container_width=True):
+                                        # Reset detection results
+                                        st.session_state["last_result_image"] = None
+                                        st.session_state.detection_run = False
+                                        st.session_state.detection_in_progress = True
+                                        st.rerun()  # Rerun to apply new detection
                             
                             # Still show the previous detection result
                             if st.session_state.get("last_result_image") is not None:
@@ -412,129 +449,134 @@ def main(theme_colors):
                                     caption="Detected Image (Previous Configuration)",
                                     use_column_width=True,
                                 )
-                        else:
-                            # Generate and display detection image if not already done
-                            if st.session_state.get("last_result_image") is not None and st.session_state.detection_run:
-                                col2_placeholder.image(
-                                    st.session_state["last_result_image"],
-                                    caption="Detected Image",
-                                    use_column_width=True,
-                                )
                             else:
-                                # Show spinner while detection is in progress
-                                if not st.session_state.detection_run:
-                                    # Set detection in progress
-                                    st.session_state.detection_in_progress = True
-                                    
-                                    # Display spinner in the placeholder
-                                    with col2_placeholder.container():
-                                        st.markdown(
-                                            f"""
-                                            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 300px;">
-                                                <div class="stSpinner">
-                                                    <div class="st-spinner-border" role="status">
-                                                        <span class="visually-hidden">Loading...</span>
-                                                    </div>
-                                                </div>
-                                                <p style="margin-top: 20px; font-size: 16px; color: {primary_color};">Processing image...</p>
-                                            </div>
-                                            """,
-                                            unsafe_allow_html=True
-                                        )
-                                    
-                                    # Load models based on configuration
-                                    model = model_leaf = model_disease = None
-
-                                    if detection_model_choice == "Disease":
-                                        if disease_model_mode == "YOLOv11m - Full Leaf":
-                                            model = helper.load_model(
-                                                Path(settings.DISEASE_MODEL_YOLO11M)
-                                            )
-                                        else:
-                                            model = (
-                                                helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
-                                                helper.load_model(
-                                                    Path(settings.DISEASE_MODEL_FULL_LEAF)
-                                                ),
-                                            )
-                                        model_leaf = model_disease = None
-
-                                    elif detection_model_choice == "Both Models":
-                                        if disease_model_mode == "YOLOv11m - Full Leaf":
-                                            model_disease = helper.load_model(
-                                                Path(settings.DISEASE_MODEL_YOLO11M)
-                                            )
-                                        else:
-                                            model_disease = (
-                                                helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
-                                                helper.load_model(
-                                                    Path(settings.DISEASE_MODEL_FULL_LEAF)
-                                                ),
-                                            )
-                                        model_leaf = helper.load_model(Path(settings.LEAF_MODEL))
-                                        model = None
-
-                                    st.session_state["uploaded_image"] = uploaded_image
-                                    
-                                    # Auto-generate preview (no saving)
-                                    uploaded_image = PIL.Image.open(source_img)
-                                    preview_image = generate_preview_image(
-                                        uploaded_image,
-                                        detection_model_choice,
-                                        model if detection_model_choice != "Both Models" else None,
-                                        model_leaf
-                                        if detection_model_choice == "Both Models"
-                                        else None,
-                                        model_disease
-                                        if detection_model_choice == "Both Models"
-                                        else None,
-                                        confidence,
-                                        overlap_threshold,
-                                        cdisease_colors,
-                                        cleaf_colors,
+                                # Generate and display detection image if not already done
+                                if st.session_state.get("last_result_image") is not None and st.session_state.detection_run:
+                                    col2_placeholder.image(
+                                        st.session_state["last_result_image"],
+                                        caption="Detected Image",
+                                        use_column_width=True,
                                     )
-                                    st.session_state["last_result_image"] = preview_image
-                                    
-                                    # Process detections with confidence levels
-                                    from modules.detection_runner import detect_with_confidence
-
-                                    # Get all detections with confidence
-                                    detections_with_confidence = detect_with_confidence(
-                                        uploaded_image,
-                                        detection_model_choice,
-                                        model if detection_model_choice != "Both Models" else None,
-                                        model_leaf if detection_model_choice == "Both Models" else None,
-                                        model_disease if detection_model_choice == "Both Models" else None,
-                                        confidence,
-                                        overlap_threshold
-                                    )
-
-                                    # Store all unique diseases (don't filter by highest confidence)
-                                    unique_diseases = set()
-                                    disease_dict = {}
-                                    all_detections = []  # Store all detections including duplicates
-
-                                    # Store all instances with their individual confidence levels
-                                    all_instances = []
-                                    
-                                    for disease, conf in detections_with_confidence:
-                                        unique_diseases.add(disease)
-                                        all_detections.append(disease)  # Keep track of all instances
-                                        all_instances.append((disease, conf))  # Store each instance with its confidence
+                                else:
+                                    # Show spinner while detection is in progress
+                                    if not st.session_state.detection_run:
+                                        # Set detection in progress
+                                        st.session_state.detection_in_progress = True
                                         
-                                        # For each disease, store the highest confidence score
-                                        if disease not in disease_dict or conf > disease_dict[disease]:
-                                            disease_dict[disease] = conf
+                                        # Use Streamlit's native spinner
+                                        with col2_placeholder.container():
+                                            with st.spinner("Processing image..."):
+                                                # Create a progress bar that fills up during detection
+                                                progress_bar = st.progress(0)
+                                                
+                                                # Load models based on configuration
+                                                progress_bar.progress(10, "Loading models...")
+                                                model = model_leaf = model_disease = None
 
-                                    st.session_state["detected_diseases"] = list(unique_diseases)
-                                    st.session_state["all_disease_detections"] = all_detections  # Store all instances
-                                    st.session_state["disease_confidences"] = disease_dict
-                                    st.session_state["all_disease_instances"] = all_instances  # Store all instances with confidence
-                                    
-                                    # Mark detection as run and save the current model config
-                                    st.session_state.detection_run = True
-                                    st.session_state.detection_in_progress = False
-                                    st.session_state.last_model_config = current_model_config.copy()
+                                                if detection_model_choice == "Disease":
+                                                    if disease_model_mode == "YOLOv11m - Full Leaf":
+                                                        model = helper.load_model(
+                                                            Path(settings.DISEASE_MODEL_YOLO11M)
+                                                        )
+                                                    else:
+                                                        model = (
+                                                            helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
+                                                            helper.load_model(
+                                                                Path(settings.DISEASE_MODEL_FULL_LEAF)
+                                                            ),
+                                                        )
+                                                    model_leaf = model_disease = None
+
+                                                elif detection_model_choice == "Both Models":
+                                                    if disease_model_mode == "YOLOv11m - Full Leaf":
+                                                        model_disease = helper.load_model(
+                                                            Path(settings.DISEASE_MODEL_YOLO11M)
+                                                        )
+                                                    else:
+                                                        model_disease = (
+                                                            helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
+                                                            helper.load_model(
+                                                                Path(settings.DISEASE_MODEL_FULL_LEAF)
+                                                            ),
+                                                        )
+                                                    model_leaf = helper.load_model(Path(settings.LEAF_MODEL))
+                                                    model = None
+
+                                                progress_bar.progress(40, "Preparing image...")
+                                                st.session_state["uploaded_image"] = uploaded_image
+                                                
+                                                # Auto-generate preview (no saving)
+                                                progress_bar.progress(60, "Running detection...")
+                                                uploaded_image = PIL.Image.open(source_img)
+                                                preview_image = generate_preview_image(
+                                                    uploaded_image,
+                                                    detection_model_choice,
+                                                    model if detection_model_choice != "Both Models" else None,
+                                                    model_leaf
+                                                    if detection_model_choice == "Both Models"
+                                                    else None,
+                                                    model_disease
+                                                    if detection_model_choice == "Both Models"
+                                                    else None,
+                                                    confidence,
+                                                    overlap_threshold,
+                                                    cdisease_colors,
+                                                    cleaf_colors,
+                                                )
+                                                
+                                                progress_bar.progress(80, "Processing results...")
+                                                st.session_state["last_result_image"] = preview_image
+                                                
+                                                # Process detections with confidence levels
+                                                from modules.detection_runner import detect_with_confidence
+
+                                                # Get all detections with confidence
+                                                detections_with_confidence = detect_with_confidence(
+                                                    uploaded_image,
+                                                    detection_model_choice,
+                                                    model if detection_model_choice != "Both Models" else None,
+                                                    model_leaf if detection_model_choice == "Both Models" else None,
+                                                    model_disease if detection_model_choice == "Both Models" else None,
+                                                    confidence,
+                                                    overlap_threshold
+                                                )
+
+                                                # Store all unique diseases (don't filter by highest confidence)
+                                                unique_diseases = set()
+                                                disease_dict = {}
+                                                all_detections = []  # Store all detections including duplicates
+
+                                                # Store all instances with their individual confidence levels
+                                                all_instances = []
+                                                
+                                                for disease, conf in detections_with_confidence:
+                                                    unique_diseases.add(disease)
+                                                    all_detections.append(disease)  # Keep track of all instances
+                                                    all_instances.append((disease, conf))  # Store each instance with its confidence
+                                                    
+                                                    # For each disease, store the highest confidence score
+                                                    if disease not in disease_dict or conf > disease_dict[disease]:
+                                                        disease_dict[disease] = conf
+
+                                                st.session_state["detected_diseases"] = list(unique_diseases)
+                                                st.session_state["all_disease_detections"] = all_detections  # Store all instances
+                                                st.session_state["disease_confidences"] = disease_dict
+                                                st.session_state["all_disease_instances"] = all_instances  # Store all instances with confidence
+                                                
+                                                # Cache the detection results for this image + config combination
+                                                st.session_state.image_detection_cache[cache_key] = {
+                                                    "result_image": preview_image,
+                                                    "detected_diseases": list(unique_diseases),
+                                                    "all_disease_detections": all_detections,
+                                                    "disease_confidences": disease_dict,
+                                                    "all_disease_instances": all_instances
+                                                }
+                                                
+                                                # Mark detection as run and save the current model config
+                                                progress_bar.progress(100, "Complete!")
+                                                st.session_state.detection_run = True
+                                                st.session_state.detection_in_progress = False
+                                                st.session_state.last_model_config = current_model_config.copy()
                                     
                                     # Display the result image after processing
                                     col2_placeholder.image(
@@ -618,7 +660,7 @@ def main(theme_colors):
                     },
                 }   
 
-                res_col = st.columns(2)
+                res_col = st.columns([0.6, 0.4])
                 with res_col[0]:
                     tab = option_menu(
                         None,
@@ -632,7 +674,8 @@ def main(theme_colors):
                 
                 if tab == "Summary":
                     if source_img is None:
-                        st.info("Upload an image to see disease detection summary")
+                        with st.container():
+                            st.info("Upload an image to see disease detection summary")
                     else:
                         detected_diseases = st.session_state.get("detected_diseases", [])
                         all_detections = st.session_state.get("all_disease_detections", [])
@@ -643,9 +686,21 @@ def main(theme_colors):
                         unique_count = len(detected_diseases)
                         
                         if total_count == unique_count:
-                            st.markdown(f"### Diseases Detected: {unique_count}")
+                            st.markdown(f"""
+                            <div style="width: 300px; padding: 20px; background-color: {secondary_background_color}; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); margin: 20px auto;">
+                                <div style="font-size: 36px; font-weight: 600; color: {primary_color}; margin: 0; padding: 0;">{unique_count}</div>
+                                <div style="font-size: 14px; color: {text_color}80; margin-top: -10px;">Diseases Detected</div>
+                            </div>
+                            """, unsafe_allow_html=True)
                         else:
-                            st.markdown(f"### Diseases Detected: {total_count} instances ({unique_count} unique types)")
+                            st.markdown(f"""
+                            <div style="width: 300px; padding: 20px; background-color: {secondary_background_color}; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); margin: 20px auto;">
+                                <div style="font-size: 36px; font-weight: 600; color: {primary_color}; margin: 0; padding: 0;">{total_count}</div>
+                                <div style="font-size: 14px; color: {text_color}80; margin-top: -10px;">Classes Detected</div>
+                                <div style="font-size: 13.5px; color: {text_color}80; margin-top: -5px;"><span style="color: {primary_color}; font-weight: 600;">{unique_count}</span> Unique Type(s)</div>
+                                <p style="font
+                            </div>
+                            """, unsafe_allow_html=True)
                         
                         if detected_diseases:
                             # Build a counter for each disease
@@ -656,9 +711,27 @@ def main(theme_colors):
                                 confidence = disease_confidences.get(disease, 0)
                                 count = disease_counter[disease]
                                 if count > 1:
-                                    st.markdown(f"- **{disease.title()}** - {count} instances - Highest Confidence: **{confidence:.1f}%**")
+                                    st.markdown(f"""
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; margin-right: 30px;">
+                                        <div style="display: flex; align-items: center;">
+                                            <span style="margin-right: 10px;">•</span>
+                                            <span style="font-weight: 600; font-size: 16px;">{disease.title()}</span>
+                                            <span style="margin-left: 8px; font-size: 16px;">{count} instances</span>
+                                        </div>
+                                        <div style="color: {text_color}80; font-size: 16px;">Highest Confidence: <span style="font-weight: 600; color: {primary_color}">{confidence:.1f}%</span></div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
                                 else:
-                                    st.markdown(f"- **{disease.title()}** - Highest Confidence: **{confidence:.1f}%**")
+                                    st.markdown(f"""
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; margin-right: 30px;">
+                                        <div style="display: flex; align-items: center;">
+                                            <span style="margin-right: 10px;">•</span>
+                                            <span style="font-weight: 600; font-size: 16px;">{disease.title()}</span>
+                                        </div>
+                                        <div style="color: {text_color}80; font-size: 16px;">Highest Confidence: <span style="font-weight: 600; color: {primary_color}">{confidence:.1f}%</span></div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                    # st.markdown(f"- **{disease.title()}** - Highest Confidence: **{confidence:.1f}%**")
                                 
                             # Check if only "healthy" is detected
                             only_healthy = len(detected_diseases) == 1 and detected_diseases[0].lower() == "healthy"
@@ -735,7 +808,8 @@ def main(theme_colors):
                 
                 elif tab == "Detailed Analysis":
                     if source_img is None:
-                        st.info("Upload an image to see detailed analysis")
+                        with st.container():
+                            st.info("Upload an image to see detailed analysis")
                     else:
                         # Show image metadata
                         gps_data = get_gps_location(source_img)
@@ -749,19 +823,19 @@ def main(theme_colors):
                         )
 
                         st.markdown("#### Image Metadata")
-                        st.write(f"- **Location**: \`{location_name}\`")
+                        st.write(f"- **Location**: `{location_name}`")
                         if gps_data:
                             st.write(
-                                f"- **Latitude**: \`{gps_data.get('latitude', 'N/A')}\`"
+                                f"- **Latitude**: `{gps_data.get('latitude', 'N/A')}`"
                             )
                             st.write(
-                                f"- **Longitude**: \`{gps_data.get('longitude', 'N/A')}\`"
+                                f"- **Longitude**: `{gps_data.get('longitude', 'N/A')}`"
                             )
                         else:
-                            st.write("- **Latitude**: \`Unavailable\`")
-                            st.write("- **Longitude**: \`Unavailable\`")
+                            st.write("- **Latitude**: `Unavailable`")
+                            st.write("- **Longitude**: `Unavailable`")
                         if image_date:
-                            st.write(f"- **Date Taken**: \`{image_date}\`")
+                            st.write(f"- **Date Taken**: `{image_date}`")
                         
                         # Show all disease instances with their individual confidence levels
                         st.markdown("#### All Disease Instances")
@@ -777,11 +851,11 @@ def main(theme_colors):
                             
                             # Display each disease type with all its instances
                             for disease, confidences in grouped_instances.items():
-                                st.markdown(f"**{disease.title()}** - {len(confidences)} instance(s)")
+                                with st.expander(f"**{disease.title()}** - {len(confidences)} instance(s)"):
                                 
-                                # Display each individual instance with its confidence
-                                for i, conf in enumerate(confidences, 1):
-                                    st.markdown(f"  - Instance {i}: Confidence **{conf:.1f}%**")
+                                    # Display each individual instance with its confidence
+                                    for i, conf in enumerate(confidences, 1):
+                                        st.markdown(f"  - Instance {i}: Confidence **{conf:.1f}%**")
                         else:
                             st.info("No disease instances detected in this image")
 
@@ -821,7 +895,7 @@ def main(theme_colors):
 
             for idx, file in enumerate(uploaded_images):
                 try:
-                    status_text.markdown(f"**Detecting and saving:** \`{file.name}\`")
+                    status_text.markdown(f"**Detecting and saving:** `{file.name}`")
                     image = PIL.Image.open(file)
                     gps_data = get_gps_location(file)
 
