@@ -163,7 +163,7 @@ def main(theme_colors):
         key="instructions_container",
         css_styles=f"""
         {{
-            background-color: #ffffff;
+            background-color: {secondary_background_color};
             border-radius: 10px;
             padding: 0;
             max-width: 1000px;
@@ -591,7 +591,7 @@ def main(theme_colors):
                                 count = disease_counter[disease]
                                 if count > 1:
                                     st.markdown(f"""
-                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; margin-right: 30px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 10px; margin-right: 30px;">
                                         <div>
                                             <div style="display: flex; align-items: center;">
                                                 <span style="margin-right: 10px;">•</span>
@@ -604,7 +604,7 @@ def main(theme_colors):
                                     """, unsafe_allow_html=True)
                                 else:
                                     st.markdown(f"""
-                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; margin-right: 30px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 10px 15px; margin-right: 30px;">
                                         <div style="display: flex; align-items: center;">
                                             <span style="margin-right: 10px;">•</span>
                                             <span style="font-weight: 600; font-size: 16px;">{disease.title()}</span>
@@ -644,7 +644,7 @@ def main(theme_colors):
                                 if db_button_disabled and st.session_state.saved_to_database:
                                     st.info("✓ Already saved to database")
                                 elif only_healthy:
-                                    st.info("ℹ️ Healthy leaves are not saved to database")
+                                    st.info("Healthy leaves are not saved to database", icon=":material/info:")
                             
                             with col2:
                                 # Check if image already exists in Drive

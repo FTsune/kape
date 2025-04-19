@@ -16,7 +16,7 @@ THEME_COLORS = {
     "LIGHT": {
         "primaryColor": "#41B3A2",
         "backgroundColor": "#fdfdfe",
-        "secondaryBackgroundColor": "#fafafa",
+        "secondaryBackgroundColor": "#ffffff",
         "textColor": "#000000",
         "logo": "images/logo_light.png",
     },
