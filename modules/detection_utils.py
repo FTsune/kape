@@ -32,67 +32,6 @@ def get_cache_key(source_img, current_model_config):
     config_str = json.dumps(current_model_config, sort_keys=True)
     return f"{image_hash}_{hashlib.md5(config_str.encode()).hexdigest()}"
 
-def load_models(detection_model_choice, disease_model_mode):
-    """Load the appropriate models based on configuration."""
-    model = model_leaf = model_disease = None
-
-    if detection_model_choice == "Disease":
-        if disease_model_mode == "YOLOv11m - Full Leaf":
-            model = helper.load_model(
-                Path(settings.DISEASE_MODEL_YOLO11M)
-            )
-        else:
-            model = (
-                helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
-                helper.load_model(
-                    Path(settings.DISEASE_MODEL_FULL_LEAF)
-                ),
-            )
-        model_leaf = model_disease = None
-
-    elif detection_model_choice == "Both Models":
-        if disease_model_mode == "YOLOv11m - Full Leaf":
-            model_disease = helper.load_model(
-                Path(settings.DISEASE_MODEL_YOLO11M)
-            )
-        else:
-            model_disease = (
-                helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
-                helper.load_model(
-                    Path(settings.DISEASE_MODEL_FULL_LEAF)
-                ),
-            )
-        model_leaf = helper.load_model(Path(settings.LEAF_MODEL))
-        model = None
-        
-    return model, model_leaf, model_disease
-
-def process_detection_results(detections_with_confidence):
-    """Process detection results and organize them for display."""
-    # Store all unique diseases (don't filter by highest confidence)
-    unique_diseases = set()
-    disease_dict = {}
-    all_detections = []  # Store all detections including duplicates
-
-    # Store all instances with their individual confidence levels
-    all_instances = []
-    
-    for disease, conf in detections_with_confidence:
-        unique_diseases.add(disease)
-        all_detections.append(disease)  # Keep track of all instances
-        all_instances.append((disease, conf))  # Store each instance with its confidence
-        
-        # For each disease, store the highest confidence score
-        if disease not in disease_dict or conf > disease_dict[disease]:
-            disease_dict[disease] = conf
-
-    return {
-        "detected_diseases": list(unique_diseases),
-        "all_disease_detections": all_detections,
-        "disease_confidences": disease_dict,
-        "all_disease_instances": all_instances
-    }
-
 def run_detection(source_img, current_model_config, progress_callback=None):
     """Run detection on an image and return results."""
     if source_img is None:
@@ -183,6 +122,67 @@ def run_detection(source_img, current_model_config, progress_callback=None):
             pass
     
     return results
+
+def load_models(detection_model_choice, disease_model_mode):
+    """Load the appropriate models based on configuration."""
+    model = model_leaf = model_disease = None
+
+    if detection_model_choice == "Disease":
+        if disease_model_mode == "YOLOv11m - Full Leaf":
+            model = helper.load_model(
+                Path(settings.DISEASE_MODEL_YOLO11M)
+            )
+        else:
+            model = (
+                helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
+                helper.load_model(
+                    Path(settings.DISEASE_MODEL_FULL_LEAF)
+                ),
+            )
+        model_leaf = model_disease = None
+
+    elif detection_model_choice == "Both Models":
+        if disease_model_mode == "YOLOv11m - Full Leaf":
+            model_disease = helper.load_model(
+                Path(settings.DISEASE_MODEL_YOLO11M)
+            )
+        else:
+            model_disease = (
+                helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
+                helper.load_model(
+                    Path(settings.DISEASE_MODEL_FULL_LEAF)
+                ),
+            )
+        model_leaf = helper.load_model(Path(settings.LEAF_MODEL))
+        model = None
+        
+    return model, model_leaf, model_disease
+
+def process_detection_results(detections_with_confidence):
+    """Process detection results and organize them for display."""
+    # Store all unique diseases (don't filter by highest confidence)
+    unique_diseases = set()
+    disease_dict = {}
+    all_detections = []  # Store all detections including duplicates
+
+    # Store all instances with their individual confidence levels
+    all_instances = []
+    
+    for disease, conf in detections_with_confidence:
+        unique_diseases.add(disease)
+        all_detections.append(disease)  # Keep track of all instances
+        all_instances.append((disease, conf))  # Store each instance with its confidence
+        
+        # For each disease, store the highest confidence score
+        if disease not in disease_dict or conf > disease_dict[disease]:
+            disease_dict[disease] = conf
+
+    return {
+        "detected_diseases": list(unique_diseases),
+        "all_disease_detections": all_detections,
+        "disease_confidences": disease_dict,
+        "all_disease_instances": all_instances
+    }
 
 def initialize_session_state():
     """Initialize all session state variables."""
