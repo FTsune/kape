@@ -163,12 +163,12 @@ def main(theme_colors):
         key="instructions_container",
         css_styles=f"""
         {{
-            background-color: {background_color};
+            background-color: #ffffff;
             border-radius: 10px;
             padding: 0;
             max-width: 1000px;
             margin: auto;
-            box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
             position: relative;
             overflow: hidden;
         }}

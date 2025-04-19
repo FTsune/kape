@@ -3,8 +3,8 @@ enableStaticServing = true
 
 [theme]
 primaryColor = "#41B3A2"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#fafafa"
+backgroundColor = "#fdfdfe"
+secondaryBackgroundColor = "#ffffff"
 
 [client]
 toolbarMode = "minimal"
