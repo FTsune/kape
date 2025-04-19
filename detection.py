@@ -468,27 +468,17 @@ def main(theme_colors):
             
             # Add pagination AFTER the image columns
             if uploaded_images and len(uploaded_images) > 1:
-                st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)  # Add some spacing
-                
-                # Create pagination with centered styling
-                st.markdown(
-                    f"""
-                    <div style="display: flex; justify-content: center; margin-top: 10px;">
-                        <div style="width: 80%;">
-                    """, 
-                    unsafe_allow_html=True
-                )
-                
-                # Use pagination component
-                new_idx = sac.pagination(
-                    total=len(uploaded_images),
-                    page_size=1,
-                    align='center',
-                    key="pagination_below_images",
-                    index=selected_idx + 1  # sac.pagination is 1-indexed
-                ) - 1  # Convert back to 0-indexed
-                
-                st.markdown("</div></div>", unsafe_allow_html=True)
+
+                with st.container():
+                    # Use pagination component
+                    new_idx = sac.pagination(
+                        total=len(uploaded_images),
+                        page_size=1,
+                        align='center',
+                        key="pagination_below_images",
+                        index=selected_idx + 1  # sac.pagination is 1-indexed
+                    ) - 1  # Convert back to 0-indexed
+            
                 
                 # Update the selected index if changed
                 if new_idx != selected_idx:

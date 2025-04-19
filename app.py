@@ -15,7 +15,7 @@ st.set_page_config(
 THEME_COLORS = {
     "LIGHT": {
         "primaryColor": "#41B3A2",
-        "backgroundColor": "#fdfdfe",
+        "backgroundColor": "#fafafa",
         "secondaryBackgroundColor": "#ffffff",
         "textColor": "#000000",
         "logo": "images/logo_light.png",
