@@ -6,7 +6,6 @@ import streamlit_antd_components as sac
 from streamlit_extras.stylable_container import stylable_container
 from streamlit_option_menu import option_menu
 from collections import Counter, defaultdict
-import time
 
 # Import modularized components
 from modules.detection_utils import (
@@ -19,7 +18,7 @@ from modules.batch_processing import process_all_images
 from modules.cache_management import (
     clear_cache, 
     get_cache_size, 
-    limit_cache_size,
+    limit_cache_size, 
     update_cache_entry,
     preload_adjacent_images
 )
@@ -148,6 +147,8 @@ def main(theme_colors):
             """, 
             unsafe_allow_html=True
         )
+
+    # save_to_drive = st.sidebar.checkbox("📤 Save samples to improve the model")
 
     # Create current model configuration dictionary
     current_model_config = {
@@ -280,9 +281,6 @@ def main(theme_colors):
                         
                     selected_idx = st.session_state.selected_image_idx
                     source_img = uploaded_images[selected_idx]
-                    
-                    # Preload adjacent images for faster pagination
-                    preload_adjacent_images(uploaded_images, selected_idx, current_model_config, get_cache_key)
                 
                 # Reset saved states when changing images
                 if "current_image_hash" not in st.session_state:
@@ -375,7 +373,7 @@ def main(theme_colors):
                             # Display the cached detection image
                             col2_placeholder.image(
                                 cached_data["result_image"],
-                                caption="Detected Image (Cached)",
+                                caption="Detected Image",
                                 use_column_width=True,
                             )
                             
@@ -476,9 +474,9 @@ def main(theme_colors):
             
             # Add pagination AFTER the image columns
             if uploaded_images and len(uploaded_images) > 1:
+
                 with st.container():
-                    # Use pagination component with a key that doesn't change with the page
-                    # This helps prevent unnecessary reruns
+                    # Use pagination component
                     new_idx = sac.pagination(
                         total=len(uploaded_images),
                         page_size=1,
@@ -486,24 +484,21 @@ def main(theme_colors):
                         key="pagination_below_images",
                         index=selected_idx + 1  # sac.pagination is 1-indexed
                     ) - 1  # Convert back to 0-indexed
+            
                 
-                # Update the selected index if changed, with debouncing to prevent multiple reruns
+                # Update the selected index if changed
                 if new_idx != selected_idx:
-                    # Store the time of the last pagination change
-                    current_time = time.time()
-                    last_pagination_time = st.session_state.get("last_pagination_time", 0)
+                    st.session_state.selected_image_idx = new_idx
                     
-                    # Only update if enough time has passed since the last change (debouncing)
-                    if current_time - last_pagination_time > 0.3:  # 300ms debounce
-                        st.session_state.selected_image_idx = new_idx
-                        st.session_state.last_pagination_time = current_time
-                        
-                        # Preload the next image before rerunning
-                        if new_idx + 1 < len(uploaded_images):
-                            next_img = uploaded_images[new_idx + 1]
-                            next_cache_key = get_cache_key(next_img, current_model_config)
-                            
-                        st.rerun()  # Rerun to load the new image
+                    # Preload adjacent images to improve pagination performance
+                    preload_adjacent_images(
+                        uploaded_images, 
+                        new_idx, 
+                        current_model_config,
+                        run_detection
+                    )
+                    
+                    st.rerun()  # Rerun to load the new image
 
         with stylable_container(
                 key="detection_res_border",
