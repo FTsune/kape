@@ -32,7 +32,7 @@ def main():
         primary_color = "#41B3A2"
         background_gradient = "linear-gradient(135deg, #E7FBE6, #B2DFDB)"
         text_color = "black"
-        container_bg = "white"
+        container_bg = "#fcfcfc"
 
     # HTML content
     content = f"""

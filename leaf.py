@@ -22,7 +22,7 @@ def main():
     primary_color = "#00fecd" if is_dark_theme else "#41B3A2"
     background_gradient = "linear-gradient(#1a3c34, #00fecd, #1a3c34)" if is_dark_theme else "linear-gradient(135deg, #E7FBE6, #B2DFDB)"
     text_color = "white" if is_dark_theme else "black"
-    container_bg = "#111827" if is_dark_theme else "white"
+    container_bg = "#111827" if is_dark_theme else "#fcfcfc"
 
     content = f"""
     <style>
