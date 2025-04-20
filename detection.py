@@ -39,13 +39,33 @@ def main(theme_colors):
     # Limit cache size to prevent memory issues
     limit_cache_size(max_entries=50)
 
-    # File uploader
+    # Add batch upload toggle in sidebar
     st.sidebar.write('Upload Image(s)')
-    uploaded_images = st.sidebar.file_uploader(
+    
+    # Initialize batch_mode in session state if not present
+    if "batch_mode" not in st.session_state:
+        st.session_state.batch_mode = False
+    
+    # Add toggle for batch mode
+    batch_mode = st.sidebar.toggle(
+        "Enable Batch Uploading", 
+        value=st.session_state.batch_mode,
+        help="Toggle to enable uploading multiple images at once"
+    )
+    
+    # Update session state if toggle changed
+    if batch_mode != st.session_state.batch_mode:
+        st.session_state.batch_mode = batch_mode
+        # Reset selected image index when switching modes
+        if "selected_image_idx" in st.session_state:
+            st.session_state.selected_image_idx = 0
+    
+    # File uploader with dynamic accept_multiple_files based on batch_mode
+    uploaded_files = st.sidebar.file_uploader(
         "UPLOAD IMAGE(S)",
         type=["jpg", "jpeg", "png", "bmp", "webp"],
-        accept_multiple_files=True,
-        key="multi_image_uploader",
+        accept_multiple_files=batch_mode,
+        key="image_uploader",
         label_visibility='collapsed'
     )
 
@@ -260,10 +280,16 @@ def main(theme_colors):
                     """,
             ):
 
-            if "multi_image_uploader" not in st.session_state:
-                uploaded_images = None
+            # Handle both single and multiple file uploads
+            uploaded_images = []
+            if batch_mode:
+                # In batch mode, use the list directly
+                if uploaded_files:
+                    uploaded_images = uploaded_files
             else:
-                uploaded_images = st.session_state["multi_image_uploader"]
+                # In single mode, wrap the single file in a list if it exists
+                if uploaded_files:
+                    uploaded_images = [uploaded_files]
             
             # Initialize source_img before pagination
             source_img = None
@@ -472,9 +498,8 @@ def main(theme_colors):
                                             # Always mark detection as no longer in progress
                                             st.session_state.detection_in_progress = False
             
-            # Add pagination AFTER the image columns
-            if uploaded_images and len(uploaded_images) > 1:
-
+            # Add pagination AFTER the image columns - only show if in batch mode and multiple images
+            if batch_mode and uploaded_images and len(uploaded_images) > 1:
                 with st.container():
                     # Use pagination component
                     new_idx = sac.pagination(
@@ -484,21 +509,20 @@ def main(theme_colors):
                         key="pagination_below_images",
                         index=selected_idx + 1  # sac.pagination is 1-indexed
                     ) - 1  # Convert back to 0-indexed
-            
                 
-                # Update the selected index if changed
-                if new_idx != selected_idx:
-                    st.session_state.selected_image_idx = new_idx
-                    
-                    # Preload adjacent images to improve pagination performance
-                    preload_adjacent_images(
-                        uploaded_images, 
-                        new_idx, 
-                        current_model_config,
-                        run_detection
-                    )
-                    
-                    st.rerun()  # Rerun to load the new image
+                    # Update the selected index if changed
+                    if new_idx != selected_idx:
+                        st.session_state.selected_image_idx = new_idx
+                        
+                        # Preload adjacent images to improve pagination performance
+                        preload_adjacent_images(
+                            uploaded_images, 
+                            new_idx, 
+                            current_model_config,
+                            run_detection
+                        )
+                        
+                        st.rerun()  # Rerun to load the new image
 
         with stylable_container(
                 key="detection_res_border",
@@ -576,7 +600,7 @@ def main(theme_colors):
                                 st.markdown(f"""
                                 <div style="width: 150px; padding: 20px; background-color: {secondary_background_color}; border-radius: 10px; text-align: center; margin: 20px auto;">
                                     <div style="font-size: 36px; font-weight: 600; color: {primary_color}; margin: 0; padding: 0;">{unique_count}</div>
-                                    <div style="font-size: 14px; color: {text_color}80; margin-top: -10px;">Diseases Detected</div>
+                                    <div style="font-size: 14px; color: {text_color}80; margin-top: -10px;">Class Detected</div>
                                 </div>
                                 """, unsafe_allow_html=True)
                             else:
@@ -744,7 +768,8 @@ def main(theme_colors):
                                     for i, conf in enumerate(confidences, 1):
                                         st.markdown(f"  - Instance {i}: Confidence **{conf:.1f}%**")
                         else:
-                            st.info("No disease instances detected in this image")
+                            with st.container():
+                                st.info("No disease instances detected in this image")
 
     # Cache management in sidebar
     if get_cache_size() > 0:

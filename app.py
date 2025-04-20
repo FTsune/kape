@@ -68,7 +68,7 @@ st.markdown(
 )
 
 # Display the logo using st.image
-st.logo(current_theme["logo"], size="large")
+st.logo(current_theme["logo"], size="large", icon_image='images/icon.png')
 
 # Dynamic styles for option menu
 menu_styles = {
