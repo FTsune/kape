@@ -2,6 +2,7 @@ import streamlit as st
 import PIL
 import hashlib
 import settings
+import time  # Add this import
 import streamlit_antd_components as sac
 from streamlit_extras.stylable_container import stylable_container
 from streamlit_option_menu import option_menu
@@ -167,8 +168,6 @@ def main(theme_colors):
             """, 
             unsafe_allow_html=True
         )
-
-    # save_to_drive = st.sidebar.checkbox("📤 Save samples to improve the model")
 
     # Create current model configuration dictionary
     current_model_config = {
@@ -409,6 +408,7 @@ def main(theme_colors):
                             st.session_state["disease_confidences"] = cached_data["disease_confidences"]
                             st.session_state["all_disease_instances"] = cached_data["all_disease_instances"]
                             st.session_state["last_result_image"] = cached_data["result_image"]
+                            st.session_state["processing_time"] = cached_data.get("processing_time", 0)
                             st.session_state.detection_run = True
                             st.session_state.last_model_config = current_model_config.copy()
                             
@@ -453,6 +453,9 @@ def main(theme_colors):
                                             progress_bar = st.progress(0)
                                         
                                         try:
+                                            # Record start time
+                                            start_time = time.time()
+                                            
                                             # Run detection with progress updates
                                             def update_progress(value, message):
                                                 try:
@@ -467,6 +470,11 @@ def main(theme_colors):
                                                 current_model_config,
                                                 update_progress
                                             )
+                                            
+                                            # Record end time and calculate duration
+                                            end_time = time.time()
+                                            processing_time = end_time - start_time
+                                            st.session_state["processing_time"] = processing_time
 
                                             if results and results.get("result_image") is not None:
                                                 # Store results in session state
@@ -477,6 +485,7 @@ def main(theme_colors):
                                                 st.session_state["last_result_image"] = results["result_image"]
                                                 
                                                 # Cache the detection results with optimization
+                                                results["processing_time"] = st.session_state.get("processing_time", 0)
                                                 update_cache_entry(cache_key, results)
                                                 
                                                 # Mark detection as run and save the current model config
@@ -596,21 +605,43 @@ def main(theme_colors):
                         unique_count = len(detected_diseases)
                         
                         with st.container(border=True):
-                            if total_count == unique_count:
+                            # Create two columns for the stats boxes
+                            stat_col1, stat_col2 = st.columns(2)
+                            
+                            with stat_col1:
+                                if total_count == unique_count:
+                                    st.markdown(f"""
+                                    <div style="width: 150px; padding: 20px; background-color: {secondary_background_color}; border-radius: 10px; text-align: center; margin: 0 auto;">
+                                        <div style="font-size: 36px; font-weight: 600; color: {primary_color}; margin: 0; padding: 0;">{unique_count}</div>
+                                        <div style="font-size: 14px; color: {text_color}80; margin-top: -10px;">Classes Detected</div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                else:
+                                    st.markdown(f"""
+                                    <div style="width: 150px; padding: 20px; background-color: {secondary_background_color}; border-radius: 10px; text-align: center; margin: 0 auto;">
+                                        <div style="font-size: 36px; font-weight: 600; color: {primary_color}; margin: 0; padding: 0;">{total_count}</div>
+                                        <div style="font-size: 14px; color: {text_color}80; margin-top: -10px;">Classes Detected</div>
+                                        <div style="font-size: 13.5px; color: {text_color}80; margin-top: -5px;"><span style="color: {primary_color}; font-weight: 600;">{unique_count}</span> Unique Type(s)</div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                            
+                            with stat_col2:
+                                # Get processing time from session state
+                                processing_time = st.session_state.get("processing_time", 0)
+                                # Format time nicely
+                                if processing_time < 1:
+                                    time_display = f"{processing_time*1000:.0f} ms"
+                                else:
+                                    time_display = f"{processing_time:.2f}s"
+                                    
                                 st.markdown(f"""
-                                <div style="width: 150px; padding: 20px; background-color: {secondary_background_color}; border-radius: 10px; text-align: center; margin: 20px auto;">
-                                    <div style="font-size: 36px; font-weight: 600; color: {primary_color}; margin: 0; padding: 0;">{unique_count}</div>
-                                    <div style="font-size: 14px; color: {text_color}80; margin-top: -10px;">Class Detected</div>
+                                <div style="width: 150px; padding: 20px; background-color: {secondary_background_color}; border-radius: 10px; text-align: center; margin: 0 auto;">
+                                    <div style="font-size: 36px; font-weight: 600; color: {primary_color}; margin: 0; padding: 0;">{time_display}</div>
+                                    <div style="font-size: 14px; color: {text_color}80; margin-top: -10px;">Processing Time</div>
                                 </div>
                                 """, unsafe_allow_html=True)
-                            else:
-                                st.markdown(f"""
-                                <div style="width: 150px; padding: 20px; background-color: {secondary_background_color}; border-radius: 10px; text-align: center; margin: 20px auto;">
-                                    <div style="font-size: 36px; font-weight: 600; color: {primary_color}; margin: 0; padding: 0;">{total_count}</div>
-                                    <div style="font-size: 14px; color: {text_color}80; margin-top: -10px;">Classes Detected</div>
-                                    <div style="font-size: 13.5px; color: {text_color}80; margin-top: -5px;"><span style="color: {primary_color}; font-weight: 600;">{unique_count}</span> Unique Type(s)</div>
-                                </div>
-                                """, unsafe_allow_html=True)
+                            
+                            st.markdown('<div style="margin: 10px;></div>"', unsafe_allow_html=True)
                         
                         if detected_diseases:
                             # Build a counter for each disease
@@ -768,8 +799,7 @@ def main(theme_colors):
                                     for i, conf in enumerate(confidences, 1):
                                         st.markdown(f"  - Instance {i}: Confidence **{conf:.1f}%**")
                         else:
-                            with st.container():
-                                st.info("No disease instances detected in this image")
+                            st.info("No disease instances detected in this image")
 
     # Cache management in sidebar
     if get_cache_size() > 0:
