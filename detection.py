@@ -124,16 +124,6 @@ def main(theme_colors):
         unsafe_allow_html=True,
     )
 
-    cleaf_colors = {0: (0, 255, 0), 1: (0, 255, 255), 2: (0, 0, 255)}
-    cdisease_colors = {
-        0: (0, 128, 128),
-        1: (255, 165, 0),
-        2: (255, 0, 0),
-        3: (128, 0, 128),
-        4: (150, 75, 0),
-        5: (255, 255, 0),
-    }
-
     # Sidebar model selection
     st.sidebar.header("MODEL CONFIGURATION")
 
@@ -764,7 +754,9 @@ def main(theme_colors):
                             else "Unavailable"
                         )
 
-                        st.markdown("##### Image Metadata")
+                        st.markdown(f"""<div style="margin: 10px 15px 10px 5px; font-size: 20px; font-weight: 600; color: {primary_color}">
+                                    Image Metadata
+                                    </div>""", unsafe_allow_html=True)
                         st.write(f"- **Location**: `{location_name}`")
                         if gps_data:
                             st.write(
@@ -799,7 +791,8 @@ def main(theme_colors):
                                     for i, conf in enumerate(confidences, 1):
                                         st.markdown(f"  - Instance {i}: Confidence **{conf:.1f}%**")
                         else:
-                            st.info("No disease instances detected in this image")
+                            with st.container():
+                                st.info("No disease instances detected in this image")
 
     # Cache management in sidebar
     if get_cache_size() > 0:
