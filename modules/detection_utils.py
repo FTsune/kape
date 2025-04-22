@@ -141,6 +141,11 @@ def load_models(detection_model_choice, disease_model_mode):
             )
         model_leaf = model_disease = None
 
+    elif detection_model_choice == "Leaf":
+        # Add this condition to handle Leaf model selection
+        model = helper.load_model(Path(settings.LEAF_MODEL))
+        model_leaf = model_disease = None
+
     elif detection_model_choice == "Both Models":
         if disease_model_mode == "YOLOv11m - Full Leaf":
             model_disease = helper.load_model(
