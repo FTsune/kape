@@ -139,10 +139,10 @@ def main(theme_colors):
     )
 
     adv_opt = st.sidebar.toggle("Advanced Options")
-    confidence = 0.5
+    confidence = 0.6
     overlap_threshold = 0.3
     if adv_opt:
-        confidence = float(st.sidebar.slider("Model Confidence", 25, 100, 70)) / 100
+        confidence = float(st.sidebar.slider("Model Confidence", 25, 100, 60)) / 100
         overlap_threshold = (
             float(st.sidebar.slider("Overlap Threshold", 0, 100, 30)) / 100
         )
