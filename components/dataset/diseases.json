@@ -3,24 +3,24 @@
     "id": "Image 1",
     "title": "Abiotic Disorder",
     "name2": "Abiotic Disorder",
-    "thumbnail": "images/diseases/abiotic2.jpg",
-    "image": "images/diseases/abiotic.jpg",
+    "thumbnail": "static/images/diseases/abiotic2.jpg",
+    "image": "static/images/diseases/abiotic.jpg",
     "description": "Abiotic disorders are caused by non-living environmental factors such as drought, temperature extremes, pollution, or nutrient deficiencies. These disorders often mimic the appearance of biotic diseases but are not caused by pathogens. Identifying abiotic stress is essential for effective crop management and long-term plant health."
     },
     {
       "id": "Image 2",
       "title": "Cercospora",
       "name2": "Cercospora coffeicola",
-      "thumbnail": "images/diseases/cercospora2.jpg",
-      "image": "images/diseases/cercospora.jpg",
+      "thumbnail": "static/images/diseases/cercospora2.jpg",
+      "image": "static/images/diseases/cercospora.jpg",
       "description": "This disease, also called Iron Spot, is caused by the fungal pathogen, Cercospora coffeicola and tends to present itself on coffee plants grown in areas of higher moisture and rainfall and on plants that are stressed."
     },
     {
       "id": "Image 3",
       "title": "Leaf Rust",
       "name2": "Hemileia vastatrix",
-      "thumbnail": "images/diseases/leaf-rust.jpg",
-      "image": "images/diseases/leaf-rust.jpg",
+      "thumbnail": "static/images/diseases/leaf-rust.jpg",
+      "image": "static/images/diseases/leaf-rust.jpg",
       "description": "Hemileia vastatrix is a multicellular basidiomycete fungus of the order Pucciniales that causes coffee leaf rust, a disease affecting the coffee plant. Coffee serves as the obligate host of coffee rust, that is, the rust must have access to and come into physical contact with coffee in order to survive.",
       "prevention": [
         "Maintaining healthy plants and good sanitation practices.",
@@ -39,8 +39,8 @@
       "id": "Image 4",
       "title": "Sooty Mold",
       "name2": "Capnodium citri",
-      "thumbnail": "images/diseases/sooty-mold.jpg",
-      "image": "images/diseases/sooty-mold2.jpg",
+      "thumbnail": "static/images/diseases/sooty-mold.jpg",
+      "image": "static/images/diseases/sooty-mold2.jpg",
       "description": "Sooty mold is a collective term for different Ascomycete fungi, which includes many genera, commonly Cladosporium and Alternaria. It grows on plants and their fruit, but also environmental objects, like fences, garden furniture, stones, and even cars."
     }
   ]  

@@ -4,8 +4,7 @@ from PIL import Image
 import hashlib
 import json
 from pathlib import Path
-import settings
-import helper
+from components.config import settings, helper
 from modules.detection_runner import generate_preview_image, detect_with_confidence
 
 def check_config_changed(current_model_config):

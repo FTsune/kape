@@ -1,6 +1,5 @@
 import streamlit as st
-import leaf
-import disease
+from components import leaf, disease
 
 def main():
     # Selectbox for choosing dataset

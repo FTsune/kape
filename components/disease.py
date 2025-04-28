@@ -9,7 +9,7 @@ def image_to_base64(image_path):
         return f"data:image/jpeg;base64,{encoded}"
 
 def load_disease_data():
-    with open('dataset/diseases.json', 'r') as file:
+    with open('components/dataset/diseases.json', 'r') as file:
         data = json.load(file)
     return data
 

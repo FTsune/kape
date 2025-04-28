@@ -1,10 +1,7 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 from streamlit_extras.stylable_container import stylable_container
-import dataset
-import detection
-import disease_tracking  # New import
-import team
+from components import detection, dataset, disease_tracking, team
 
 # Setting page layout
 st.set_page_config(
@@ -18,14 +15,14 @@ THEME_COLORS = {
         "backgroundColor": "#fcfcfc",
         "secondaryBackgroundColor": "#ffffff",
         "textColor": "#000000",
-        "logo": "images/logo_light.png",
+        "logo": "static/images/logo_light.png",
     },
     "DARK": {
         "primaryColor": "#00fecd",
         "backgroundColor": "#111827",
         "secondaryBackgroundColor": "#141b2a",
         "textColor": "#ffffff",
-        "logo": "images/logo_dark.png",
+        "logo": "static/images/logo_dark.png",
     },
 }
 
@@ -68,7 +65,7 @@ st.markdown(
 )
 
 # Display the logo using st.image
-st.logo(current_theme["logo"], size="large", icon_image='images/icon.png')
+st.logo(current_theme["logo"], size="large", icon_image='static/images/icon.png')
 
 # Dynamic styles for option menu
 menu_styles = {

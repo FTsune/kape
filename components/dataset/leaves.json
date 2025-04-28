@@ -3,24 +3,24 @@
       "id": "Image 1",
       "name": "Arabica",
       "sci_name": "Coffea arabica",
-      "image_path": "images/leaves/arabica2.jpg",
-      "display_image": "images/leaves/arabica.jpg",
+      "image_path": "static/images/leaves/arabica2.jpg",
+      "display_image": "static/images/leaves/arabica.jpg",
       "description": "Coffea arabica, also known as the Arabica coffee, is a species of flowering plant in the coffee and madder family Rubiaceae. It is believed to be the first species of coffee to have been cultivated and is the dominant cultivar, representing about 60% of global production."
     },
     {
       "id": "Image 2",
       "name": "Liberica",
       "sci_name": "Coffea liberica",
-      "image_path": "images/leaves/liberica2.jpg",
-      "display_image": "images/leaves/liberica.jpg",
+      "image_path": "static/images/leaves/liberica2.jpg",
+      "display_image": "static/images/leaves/liberica.jpg",
       "description": "Coffea liberica, commonly known as the Liberian coffee, is a species of flowering plant in the family Rubiaceae from which coffee is produced. It is native to western and central Africa, and has become naturalised in areas including Colombia, Venezuela, the Philippines, Borneo and Java."
     },
     {
       "id": "Image 3",
       "name": "Robusta",
       "sci_name": "Coffea canephora",
-      "image_path": "images/leaves/robusta.jpg",
-      "display_image": "images/leaves/robusta2.png",
+      "image_path": "static/images/leaves/robusta.jpg",
+      "display_image": "static/images/leaves/robusta2.png",
       "description": "Coffea canephora is a species of coffee plant that has its origins in central and western sub-Saharan Africa. It is a species of flowering plant in the family Rubiaceae. Though widely known as Coffea robusta, the plant is scientifically identified as Coffea canephora, which has two main varieties, robusta and nganda."
     }
   ]  

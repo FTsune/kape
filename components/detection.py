@@ -1,34 +1,16 @@
 import streamlit as st
-import PIL
-import hashlib
-import settings
-import time
 from streamlit_extras.stylable_container import stylable_container
 from modules.ui_manager import manage_ui_state
 
-# Import all your other modules
-from modules.detection_utils import (
-    initialize_session_state,
-    check_config_changed,
-    get_cache_key,
-    run_detection
-)
+# Import other modules
+from modules.detection_utils import initialize_session_state
 from modules.batch_processing import process_all_images
 from modules.cache_management import (
     clear_cache, 
     get_cache_size, 
-    limit_cache_size, 
-    update_cache_entry,
-    preload_adjacent_images
-)
-from modules.gps_utils import (
-    get_gps_location,
-    get_image_taken_time,
-    get_location_name,
-    save_location_data,
+    limit_cache_size
 )
 from modules.image_uploader import authenticate_drive
-from modules.detection_runner import check_image_exists, _upload_image_once
 
 def main(theme_colors):
     # Initialize session state variables
@@ -107,6 +89,7 @@ def main(theme_colors):
         unsafe_allow_html=True,
     )
 
+    # To be removed
     warn.markdown(
         f"""<div style='background-color: transparent; border: 1px solid {primary_color}; border-radius: 10px;'>
                 <p style='font-size: 0.9rem; color: {primary_color}; margin: 0px 0px; padding: 10px;'>

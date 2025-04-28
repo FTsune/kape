@@ -17,13 +17,13 @@ IMAGE = "Image"
 SOURCES_LIST = [IMAGE]
 
 # Images config
-IMAGES_DIR = ROOT / "images"
+IMAGES_DIR = ROOT / "../../static/images"
 DEFAULT_IMAGE = IMAGES_DIR / "DB2.jpg"
 DEFAULT_DETECT_IMAGE = IMAGES_DIR / "DB.jpg"
 
 
 # ML Model config
-MODEL_DIR = ROOT / "weights"
+MODEL_DIR = ROOT / "../../weights"
 
 DISEASE_MODEL_SPOTS = MODEL_DIR / "spots.pt"  # old name: DISEASE_DETECTION_MODEL
 DISEASE_MODEL_FULL_LEAF = (

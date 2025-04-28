@@ -9,7 +9,7 @@ def image_to_base64(image_path):
         return f"data:image/jpeg;base64,{encoded}"
 
 def load_data():
-    with open("dataset/leaves.json", "r") as file:
+    with open("components/dataset/leaves.json", "r") as file:
         return json.load(file)
 
 def main():
