@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 from components.config import settings, helper
+from modules.dialog_utils import show_disease_dialog, show_leaf_dialog, show_both_model_disease_dialog
 from modules.detection_runner import generate_preview_image, detect_with_confidence
 
 def check_config_changed(current_model_config):
@@ -113,6 +114,15 @@ def run_detection(source_img, current_model_config, progress_callback=None):
     # Process detection results
     results = process_detection_results(detections_with_confidence)
     results["result_image"] = preview_image
+
+    # Show dialog if no relevant detections found
+    model_choice = current_model_config["detection_model_choice"]
+    if model_choice == "Disease" and not results["detected_diseases"]:
+        show_disease_dialog()
+    # elif model_choice == "Leaf" and not results["all_disease_detections"]:
+    #     show_leaf_dialog()
+    elif model_choice == "Both Models" and not results["detected_diseases"]:
+        show_both_model_disease_dialog()
     
     if progress_callback:
         try:

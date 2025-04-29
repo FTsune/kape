@@ -562,13 +562,13 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                     if check_image_exists(drive, PARENT_FOLDER_ID, source_img.name):
                                         st.warning("⚠️ This image already exists in Google Drive")
                                     else:
-                                        with st.spinner("Uploading to Google Drive..."):
-                                            # Use the first detected disease as the label, or "Unknown" if none
-                                            label = detected_diseases[0] if detected_diseases else "Unknown"
+                                        # with st.spinner("Uploading to Google Drive..."):
+                                        # Use the first detected disease as the label, or "Unknown" if none
+                                        label = detected_diseases[0] if detected_diseases else "Unknown"
                                                     
-                                            _upload_image_once(uploaded_image, label, drive, PARENT_FOLDER_ID)
-                                            st.session_state.saved_to_drive = True
-                                            st.success("✅ Image uploaded to Google Drive successfully!")
+                                        _upload_image_once(uploaded_image, label, drive, PARENT_FOLDER_ID)
+                                        st.session_state.saved_to_drive = True
+                                        st.success("✅ Image uploaded to Google Drive successfully!")
                                 except Exception as e:
                                     st.error(f"Error uploading to Drive: {e}")
                                     
@@ -659,6 +659,14 @@ def manage_ui_state(theme_colors):
     
     # Get batch mode setting
     batch_mode = st.session_state.get("batch_mode", False)
+    
+    # Check if batch mode was just toggled
+    if "previous_batch_mode" in st.session_state and st.session_state.previous_batch_mode != batch_mode:
+        # Reset uploaded files to return to instructions view when batch mode changes
+        st.session_state["uploaded_files"] = None
+    
+    # Store current batch mode for next comparison
+    st.session_state["previous_batch_mode"] = batch_mode
     
     # Get current model config
     current_model_config = st.session_state.get("current_model_config", {})
