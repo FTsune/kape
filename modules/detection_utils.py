@@ -79,7 +79,7 @@ def run_detection(source_img, current_model_config, progress_callback=None):
         uploaded_image,
         detection_model_choice,
         model if detection_model_choice != "Both Models" else None,
-        model_leaf if detection_model_choice == "Both Models" else None,
+        model_leaf if detection_model_choice in ["Leaf", "Both Models"] else None,
         model_disease if detection_model_choice == "Both Models" else None,
         confidence,
         overlap_threshold,
@@ -104,9 +104,9 @@ def run_detection(source_img, current_model_config, progress_callback=None):
     detections_with_confidence = detect_with_confidence(
         uploaded_image,
         detection_model_choice,
-        model if detection_model_choice != "Both Models" else None,
-        model_leaf if detection_model_choice == "Both Models" else None,
-        model_disease if detection_model_choice == "Both Models" else None,
+        model,
+        model_leaf,
+        model_disease,
         confidence,
         overlap_threshold
     )
@@ -119,8 +119,8 @@ def run_detection(source_img, current_model_config, progress_callback=None):
     model_choice = current_model_config["detection_model_choice"]
     if model_choice == "Disease" and not results["detected_diseases"]:
         show_disease_dialog()
-    # elif model_choice == "Leaf" and not results["all_disease_detections"]:
-    #     show_leaf_dialog()
+    elif model_choice == "Leaf" and not results["all_disease_detections"]:
+        show_leaf_dialog()
     elif model_choice == "Both Models" and not results["detected_diseases"]:
         show_both_model_disease_dialog()
     
@@ -153,7 +153,8 @@ def load_models(detection_model_choice, disease_model_mode):
     elif detection_model_choice == "Leaf":
         # Add this condition to handle Leaf model selection
         model = helper.load_model(Path(settings.LEAF_MODEL))
-        model_leaf = model_disease = None
+        model_leaf = model  # Set model_leaf to the same model for consistency
+        model_disease = None
 
     elif detection_model_choice == "Both Models":
         if disease_model_mode == "YOLOv11m - Full Leaf":
@@ -182,14 +183,30 @@ def process_detection_results(detections_with_confidence):
     # Store all instances with their individual confidence levels
     all_instances = []
     
+    # Separate leaf types and diseases
+    leaf_types = ["arabica", "liberica", "robusta"]
+    
     for disease, conf in detections_with_confidence:
-        unique_diseases.add(disease)
-        all_detections.append(disease)  # Keep track of all instances
-        all_instances.append((disease, conf))  # Store each instance with its confidence
+        # Add to all instances regardless of type
+        all_instances.append((disease, conf))
         
-        # For each disease, store the highest confidence score
-        if disease not in disease_dict or conf > disease_dict[disease]:
-            disease_dict[disease] = conf
+        # Add to appropriate category
+        if disease.lower() in leaf_types:
+            # This is a leaf type detection
+            unique_diseases.add(disease)
+            all_detections.append(disease)
+            
+            # Store highest confidence for each leaf type
+            if disease not in disease_dict or conf > disease_dict[disease]:
+                disease_dict[disease] = conf
+        else:
+            # This is a disease detection
+            unique_diseases.add(disease)
+            all_detections.append(disease)
+            
+            # Store highest confidence for each disease
+            if disease not in disease_dict or conf > disease_dict[disease]:
+                disease_dict[disease] = conf
 
     return {
         "detected_diseases": list(unique_diseases),

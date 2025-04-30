@@ -4,7 +4,7 @@ import numpy as np
 import time
 
 
-def draw_bounding_boxes(image, boxes, labels, colors):
+def draw_bounding_boxes(image, boxes, labels, colors, normalize_label=None):
     """Function to draw bounding boxes with labels and confidence on the image."""
     res_image = np.array(image)
     height, width, _ = res_image.shape  # Get image dimensions
@@ -15,7 +15,17 @@ def draw_bounding_boxes(image, boxes, labels, colors):
         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
         label_idx = int(box.cls)
         confidence = float(box.conf)
-        label = f"{labels[label_idx]}: {confidence:.2f}"
+        
+        # Get the label name
+        raw_label = labels[label_idx]
+        
+        # Apply normalization if provided
+        display_label = raw_label
+        if normalize_label is not None:
+            display_label = normalize_label(raw_label)
+            
+        # Format the label with confidence
+        label = f"{display_label}: {confidence:.2f}"
 
         # Determine color based on class
         color = colors[label_idx]

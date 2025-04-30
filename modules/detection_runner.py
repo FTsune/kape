@@ -129,6 +129,18 @@ def generate_preview_image(
     from modules.visualizations import draw_bounding_boxes
     import numpy as np
 
+    def normalize_label(raw_name):
+        """Normalize label names"""
+        # Convert underscores to spaces and capitalize
+        name = raw_name.lower()
+        
+        # Special case handling
+        if name == "late-stage-rust":
+            return "rust"
+        
+        # Return the name with title case
+        return name
+
     try:
         if model_type == "Disease":
             # Check if 'model' (the disease model input) is a tuple
@@ -142,7 +154,7 @@ def generate_preview_image(
                     0
                 ].names  # remain as predicted (e.g. "late-stage-rust")
                 result_image = draw_bounding_boxes(
-                    result_image, boxes1, labels1, cdisease_colors
+                    result_image, boxes1, labels1, cdisease_colors, normalize_label=normalize_label
                 )
 
                 # Process second disease model
@@ -150,7 +162,7 @@ def generate_preview_image(
                 boxes2 = non_max_suppression(result2[0].boxes, overlap_threshold)
                 labels2 = result2[0].names
                 result_image = draw_bounding_boxes(
-                    result_image, boxes2, labels2, cdisease_colors
+                    result_image, boxes2, labels2, cdisease_colors, normalize_label=normalize_label
                 )
 
                 return result_image
@@ -160,14 +172,19 @@ def generate_preview_image(
                 boxes = non_max_suppression(result[0].boxes, overlap_threshold)
                 labels = result[0].names
                 return draw_bounding_boxes(
-                    uploaded_image, boxes, labels, cdisease_colors
+                    uploaded_image, boxes, labels, cdisease_colors, normalize_label=normalize_label
                 )
 
         elif model_type == "Leaf":
-            result = model.predict(uploaded_image, conf=confidence)
-            boxes = non_max_suppression(result[0].boxes, overlap_threshold)
-            labels = result[0].names
-            return draw_bounding_boxes(uploaded_image, boxes, labels, cleaf_colors)
+            # Ensure model is not None
+            if model is not None:
+                result = model.predict(uploaded_image, conf=confidence)
+                boxes = non_max_suppression(result[0].boxes, overlap_threshold)
+                labels = result[0].names
+                return draw_bounding_boxes(uploaded_image, boxes, labels, cleaf_colors, normalize_label=normalize_label)
+            else:
+                # Return original image if model is None
+                return np.array(uploaded_image)
 
         elif model_type == "Both Models":
             # Start with a copy of the uploaded image
@@ -185,7 +202,7 @@ def generate_preview_image(
                     0
                 ].names  # original labels used for drawing
                 result_image = draw_bounding_boxes(
-                    result_image, boxes_disease1, labels_disease1, cdisease_colors
+                    result_image, boxes_disease1, labels_disease1, cdisease_colors, normalize_label=normalize_label
                 )
 
                 result_disease2 = model_disease[1].predict(
@@ -196,7 +213,7 @@ def generate_preview_image(
                 )
                 labels_disease2 = result_disease2[0].names
                 result_image = draw_bounding_boxes(
-                    result_image, boxes_disease2, labels_disease2, cdisease_colors
+                    result_image, boxes_disease2, labels_disease2, cdisease_colors, normalize_label=normalize_label
                 )
             else:
                 result_disease = model_disease.predict(uploaded_image, conf=confidence)
@@ -205,18 +222,22 @@ def generate_preview_image(
                 )
                 labels_disease = result_disease[0].names
                 result_image = draw_bounding_boxes(
-                    result_image, boxes_disease, labels_disease, cdisease_colors
+                    result_image, boxes_disease, labels_disease, cdisease_colors, normalize_label=normalize_label
                 )
 
             # Process leaf detections (drawn with original label)
-            result_leaf = model_leaf.predict(uploaded_image, conf=confidence)
-            leaf_boxes = non_max_suppression(result_leaf[0].boxes, overlap_threshold)
-            leaf_labels = result_leaf[0].names
-            result_image = draw_bounding_boxes(
-                result_image, leaf_boxes, leaf_labels, cleaf_colors
-            )
+            if model_leaf is not None:
+                result_leaf = model_leaf.predict(uploaded_image, conf=confidence)
+                leaf_boxes = non_max_suppression(result_leaf[0].boxes, overlap_threshold)
+                leaf_labels = result_leaf[0].names
+                result_image = draw_bounding_boxes(
+                    result_image, leaf_boxes, leaf_labels, cleaf_colors, normalize_label=normalize_label
+                )
 
             return result_image
+        
+        # Default case - return original image
+        return np.array(uploaded_image)
 
     except Exception as e:
         st.warning(f"Auto-preview failed: {e}")
@@ -285,6 +306,7 @@ def detect_with_confidence(
             current_detections.append((name, score))
         return current_detections
 
+    # Process disease detections
     if model_type in ["Disease", "Both Models"]:
         used_model = model if model_type == "Disease" else model_disease
 
@@ -299,6 +321,12 @@ def detect_with_confidence(
             # For single models
             res = used_model.predict(uploaded_image, conf=confidence)
             detections.extend(process_boxes(res, res[0].names))
+    
+    # Process leaf detections if using Leaf or Both Models
+    if model_type in ["Leaf", "Both Models"]:
+        res_leaf = model_leaf.predict(uploaded_image, conf=confidence)
+        leaf_detections = process_boxes(res_leaf, res_leaf[0].names)
+        detections.extend(leaf_detections)
 
     # Return all detections without filtering
     return detections

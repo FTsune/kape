@@ -26,47 +26,13 @@ from modules.gps_utils import (
 )
 from modules.detection_runner import check_image_exists, _upload_image_once
 
+from components.ui.instructions import top_bar, instructions_header, subtitle, step_item, note_banner
+
 def render_instructions(theme, primary_color, secondary_background_color, text_color, default_image_path, batch_mode=False):
-    """
-    Renders the instructions UI with file uploader
-    
-    Returns:
-        tuple: (uploaded_files, has_file) - The uploaded files and whether any files were uploaded
-    """
-    # Teal gradient at the top
-    st.markdown(
-        """
-        <div style="height: 4px; background: linear-gradient(to right, #4dd6c1, #37b8a4, #2aa395); width: 100%;"></div>
-        """, 
-        unsafe_allow_html=True
-    )
-    
-    # Instructions header with checkmark icon
-    st.markdown(
-        f"""
-        <div style="padding: 0 24px 0 24px; display: flex; align-items: center;">
-            <div style="background-color: {primary_color}33; border: 2px solid {primary_color}; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                <svg xmlns="http://www.w3.org/2000/svg" color="{primary_color}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </div>
-            <h2 style="margin: 0; font-family: 'Inter', sans-serif; font-size: 1.4rem; color: {text_color};">Instructions</h2>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    
-    # Instructions subtitle
-    st.markdown(
-        f"""
-        <div style="padding: 0 24px 15px 65px; margin-top: -15px;">
-            <p style="font-family: 'Inter', sans-serif; color: {text_color}; font-size: 0.95rem; line-height: 1.25rem; opacity: 0.5; margin: 0;">Follow these steps to detect coffee leaf diseases</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    
-    # Steps
+    st.markdown(top_bar(), unsafe_allow_html=True)
+    st.markdown(instructions_header(primary_color, text_color), unsafe_allow_html=True)
+    st.markdown(subtitle(text_color), unsafe_allow_html=True)
+
     steps = [
         "Configure the model settings in the sidebar",
         "Upload a valid image file (jpeg, jpg, webp, png)",
@@ -76,31 +42,10 @@ def render_instructions(theme, primary_color, secondary_background_color, text_c
     ]
     
     for i, step in enumerate(steps, 1):
-        st.markdown(
-            f"""
-            <div style="display: flex; align-items: center; padding: 12px 20px 5px 50px;">
-                <div style="background-color: {primary_color}; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">
-                    <span style="font-weight: 600; font-size: 15px; color: white">{i}</span>
-                </div>
-                <p style="letter-spacing: 0.4px; font-family: 'Inter', sans-serif; font-size: 0.95rem; line-height: 1.25rem; margin: 0; color: {text_color};">{step}</p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    
-    # Note banner
-    st.markdown(
-        f"""
-        <div style="border-radius: 4px; margin: 20px 24px 0; padding: 12px 16px 0; display: flex; align-items: flex-start;">
-            <p style="font-family: 'Inter', sans-serif; margin: 0; color: {primary_color};"></p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+        st.markdown(step_item(i, step, primary_color, text_color), unsafe_allow_html=True)
 
+    st.markdown(note_banner(primary_color), unsafe_allow_html=True)
     st.warning('Our model is currently optimized to detect diseases only in coffee leaves.', icon=':material/info:')
-    
-    # Add file uploader below the warning message
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
     with stylable_container(
@@ -505,39 +450,75 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                     <div style="color: {text_color}80; font-size: 16px;">Confidence: <span style="font-weight: 600; color: {primary_color}">{confidence:.1f}%</span></div>
                                 </div>
                                 """, unsafe_allow_html=True)
-                                    
-                        # Check if only "healthy" is detected
+                        
+                        # Get all instances from session state
+                        all_instances = st.session_state.get("all_disease_instances", [])
+                        
+                        # Filter for leaf types and disease types
+                        leaf_types = ["arabica", "liberica", "robusta"]
+                        leaf_instances = [inst for inst in all_instances if inst[0].lower() in leaf_types]
+                        disease_instances = [inst for inst in all_instances if inst[0].lower() not in leaf_types]
+                        
+                        # Check if only leaf types or healthy leaves are detected
+                        only_leaf_types = all(disease.lower() in leaf_types for disease in detected_diseases)
                         only_healthy = len(detected_diseases) == 1 and detected_diseases[0].lower() == "healthy"
-                                
+                        only_healthy_and_leaves = all(disease.lower() == "healthy" or disease.lower() in leaf_types for disease in detected_diseases)
+                        
+                        # Determine if buttons should be disabled based on model type and detections
+                        model_type = current_model_config.get("detection_model_choice", "")
+                        
+                        # Disable buttons if:
+                        # 1. Using Leaf model (only for leaf detection)
+                        # 2. Only leaf types detected (no diseases)
+                        # 3. Only healthy leaves detected
+                        # 4. Only healthy leaves + leaf types detected
+                        buttons_disabled = (
+                            model_type == "Leaf" or  # Leaf model only
+                            only_leaf_types or       # Only leaf types detected
+                            only_healthy or          # Only healthy leaves
+                            only_healthy_and_leaves  # Only healthy leaves + leaf types
+                        )
+                        
                         # Add buttons for saving data and uploading to drive
                         col1, col2 = st.columns(2)
                                 
                         with col1:
-                            # Disable button if already saved or only healthy detected
-                            db_button_disabled = st.session_state.saved_to_database or only_healthy
-                                    
-                            if st.button("💾 Save to Database", 
-                                    use_container_width=True, 
-                                    disabled=db_button_disabled):
-                                try:
-                                    gps_data = get_gps_location(source_img)
+                            # Disable button if already saved or buttons should be disabled
+                            db_button_disabled = st.session_state.saved_to_database or buttons_disabled
+                            
+                            if buttons_disabled and not st.session_state.saved_to_database:
+                                if model_type == "Leaf":
+                                    st.info("Coffee leaf types are not saved to database", icon=":material/info:")
+                                elif only_leaf_types:
+                                    st.info("Coffee leaf types are not saved to database", icon=":material/info:")
+                                elif only_healthy:
+                                    st.info("Healthy leaves are not saved to database", icon=":material/info:")
+                                elif only_healthy_and_leaves:
+                                    st.info("Healthy leaves and leaf types are not saved to database", icon=":material/info:")
+                            else:
+                                if st.button("💾 Save to Database", 
+                                        use_container_width=True, 
+                                        disabled=db_button_disabled):
+                                    try:
+                                        gps_data = get_gps_location(source_img)
+                                                
+                                        with st.spinner("Saving to database..."):
+                                            # Filter out leaf types and healthy leaves when saving
+                                            saveable_diseases = [d for d in detected_diseases 
+                                                                if d.lower() not in leaf_types and 
+                                                                d.lower() != "healthy"]
                                             
-                                    with st.spinner("Saving to database..."):
-                                        for disease in detected_diseases:
-                                            # Skip saving if it's healthy
-                                            if disease.lower() != "healthy":
+                                            for disease in saveable_diseases:
                                                 confidence = disease_confidences.get(disease, 75) # Default to 75 if not found
                                                 save_location_data(source_img, disease, confidence, gps_data)
-                                                
-                                        st.session_state.saved_to_database = True
-                                        st.success("✅ Data saved successfully to database!")
-                                except Exception as e:
-                                    st.error(f"Error saving data: {e}")
-                                    
-                            if db_button_disabled and st.session_state.saved_to_database:
-                                st.info("✓ Already saved to database")
-                            elif only_healthy:
-                                st.info("Healthy leaves are not saved to database", icon=":material/info:")
+                                                    
+                                            st.session_state.saved_to_database = True
+                                            st.success("✅ Data saved successfully to database!")
+                                    except Exception as e:
+                                        st.error(f"Error saving data: {e}")
+                                        
+                                if db_button_disabled and st.session_state.saved_to_database:
+                                    st.info("✓ Already saved to database")
                                 
                         with col2:
                             # Check if image already exists in Drive
@@ -549,33 +530,47 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                     # If check fails, assume it doesn't exist
                                     pass
                                     
-                            # Disable button if already saved or image exists
-                            drive_button_disabled = st.session_state.saved_to_drive or image_exists
+                            # Disable button if already saved, image exists, or buttons should be disabled
+                            drive_button_disabled = st.session_state.saved_to_drive or image_exists or buttons_disabled
                                     
-                            if st.button("☁️ Save to Drive", 
-                                    use_container_width=True,
+                            if buttons_disabled and not st.session_state.saved_to_drive:
+                                if model_type == "Leaf":
+                                    st.info("Coffee leaf types are not saved to Drive", icon=":material/info:")
+                                elif only_leaf_types:
+                                    st.info("Coffee leaf types are not saved to Drive", icon=":material/info:")
+                                elif only_healthy:
+                                    st.info("Healthy leaves are not saved to Drive", icon=":material/info:")
+                                elif only_healthy_and_leaves:
+                                    st.info("Healthy and coffee leaf types are not saved to Drive", icon=":material/info:")
+                            else:
+                                if st.button("☁️ Save to Drive", 
+                                        use_container_width=True,
                                         disabled=drive_button_disabled):
-                                try:
-                                    uploaded_image = PIL.Image.open(source_img)
+                                    try:
+                                        uploaded_image = PIL.Image.open(source_img)
+                                                
+                                        # Double-check if image exists before uploading
+                                        if check_image_exists(drive, PARENT_FOLDER_ID, source_img.name):
+                                            st.warning("⚠️ This image already exists in Google Drive")
+                                        else:
+                                            # Filter out leaf types and healthy leaves when selecting label
+                                            saveable_diseases = [d for d in detected_diseases 
+                                                                if d.lower() not in leaf_types and 
+                                                                d.lower() != "healthy"]
                                             
-                                    # Double-check if image exists before uploading
-                                    if check_image_exists(drive, PARENT_FOLDER_ID, source_img.name):
-                                        st.warning("⚠️ This image already exists in Google Drive")
-                                    else:
-                                        # with st.spinner("Uploading to Google Drive..."):
-                                        # Use the first detected disease as the label, or "Unknown" if none
-                                        label = detected_diseases[0] if detected_diseases else "Unknown"
-                                                    
-                                        _upload_image_once(uploaded_image, label, drive, PARENT_FOLDER_ID)
-                                        st.session_state.saved_to_drive = True
-                                        st.success("✅ Image uploaded to Google Drive successfully!")
-                                except Exception as e:
-                                    st.error(f"Error uploading to Drive: {e}")
-                                    
-                            if drive_button_disabled and st.session_state.saved_to_drive:
-                                st.info("✓ Already saved to Drive")
-                            elif drive_button_disabled and image_exists:
-                                st.warning("⚠️ This image already exists in Google Drive")
+                                            # Use the first saveable disease as the label, or "Unknown" if none
+                                            label = saveable_diseases[0] if saveable_diseases else "Unknown"
+                                                        
+                                            _upload_image_once(uploaded_image, label, drive, PARENT_FOLDER_ID)
+                                            st.session_state.saved_to_drive = True
+                                            st.success("✅ Image uploaded to Google Drive successfully!")
+                                    except Exception as e:
+                                        st.error(f"Error uploading to Drive: {e}")
+                                        
+                                if drive_button_disabled and st.session_state.saved_to_drive:
+                                    st.info("✓ Already saved to Drive")
+                                elif drive_button_disabled and image_exists:
+                                    st.warning("⚠️ This image already exists in Google Drive")
                     else:
                         with st.container():
                             st.info("No class detected in this image")
@@ -613,16 +608,35 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                     if image_date:
                         st.write(f"- **Date Taken**: `{image_date}`")
                             
-                    # Show all disease instances with their individual confidence levels
+                    # Show all leaf and disease instances with their individual confidence levels
+                    # First, add a dedicated section for leaf types
+                    model_type = current_model_config.get("detection_model_choice", "")
+                    if model_type in ["Leaf", "Both Models"]:
+                        
+                        # Get leaf instances from all_disease_instances
+                        all_instances = st.session_state.get("all_disease_instances", [])
+                        leaf_instances = [inst for inst in all_instances if inst[0].lower() in ["arabica", "liberica", "robusta"]]
+                        
+                        if leaf_instances:
+                            with st.expander('Leaf Types'):
+                                for leaf_type, score in leaf_instances:
+                                    st.markdown(f"- **{leaf_type.title()}**: {score:.1f}% confidence")
+                        else:
+                            st.info("No leaf type detected in this image")
+                    
+                    # Then show the disease instances
                     st.markdown(f"""<div style="margin: 10px 15px 10px 5px; font-size: 20px; font-weight: 600; color: {primary_color}">
-                                All Instances
+                                All Class Instances
                                 </div>""", unsafe_allow_html=True)
                     all_instances = st.session_state.get("all_disease_instances", [])
-                    if all_instances:
+                    # Filter out leaf types for the disease section
+                    disease_instances = [inst for inst in all_instances if inst[0].lower() not in ["arabica", "liberica", "robusta"]]
+                    
+                    if disease_instances:
                         # Group instances by disease type for better organization
                         grouped_instances = defaultdict(list)
                                 
-                        for disease, confidence in all_instances:
+                        for disease, confidence in disease_instances:
                             grouped_instances[disease].append(confidence)
                                 
                         # Display each disease type with all its instances
@@ -634,7 +648,7 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                     st.markdown(f"  - Instance {i}: Confidence **{conf:.1f}%**")
                     else:
                         with st.container():
-                            st.info("No class instances detected in this image")
+                            st.info("No class/disease instances detected in this image")
 
         # Add a button to go back to instructions
         col1, col2, col3 = st.columns([1, 2, 1])

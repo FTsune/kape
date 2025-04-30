@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_extras.stylable_container import stylable_container
-from modules.ui_manager import manage_ui_state
+from components.ui_manager import manage_ui_state
 
 # Import other modules
 from modules.detection_utils import initialize_session_state

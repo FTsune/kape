@@ -14,7 +14,7 @@ def show_disease_dialog():
 def show_leaf_dialog():
     st.warning("No leaf types were found. Make sure the image contains a clear leaf.", icon=':material/warning:')
     st.markdown("**Helpful Tips:**")
-    st.markdown("- **Use Clear Images**: Avoid blurry or cluttered backgrounds")
+    st.markdown("- **Use Clear Images**: Avoid blurry or low quality images")
     st.markdown("- **Center the Leaf**: Ensure the leaf fills the frame")
 
 @st.dialog("No Classes Detected")
