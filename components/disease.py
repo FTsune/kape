@@ -141,6 +141,7 @@ def main():
                 st.subheader(disease['title'])
                 st.markdown(f"<p style='color: gray; margin-top: -15px; font-weight: italic;'><em>{disease['name2']}</em></p>", unsafe_allow_html=True)
                 st.markdown(disease['description'])
+                st.markdown("Reference ☕: " + disease['link'])
         
         with tab2:
             st.subheader('Prevention')
