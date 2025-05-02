@@ -625,9 +625,31 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                             with st.container():
                                 st.info("No leaf type detected in this image")
                     
+                    # Add Image Metadata section
+                    st.markdown(f"""<div style="margin: 10px 15px 10px 5px; font-size: 20px; font-weight: 600; color: {primary_color}">
+                                Image Metadata
+                                </div>""", unsafe_allow_html=True)
+
+                    # Get image metadata
+                    date_taken = get_image_taken_time(source_img)
+                    gps_data = get_gps_location(source_img)
+                    location_name = None
+                    if gps_data and gps_data.get("latitude") and gps_data.get("longitude"):
+                        location_name = get_location_name(gps_data["latitude"], gps_data["longitude"])
+
+                    # Display metadata in a clean format
+                    with st.container():
+                        if date_taken or location_name:
+                            if date_taken:
+                                st.markdown(f"📍 **Date Taken**: {date_taken.strftime('%B %d, %Y')}")
+                            if location_name:
+                                st.markdown(f"📅 **Location**: {location_name}")
+                        else:
+                            st.info("No metadata available for this image")
+                    
                     # Add a Recommendation section for detected diseases
                     st.markdown(f"""<div style="margin: 10px 15px 10px 5px; font-size: 20px; font-weight: 600; color: {primary_color}">
-                                Recommendation
+                                Recommendations
                                 </div>""", unsafe_allow_html=True)
                     
                     # Get detected diseases and filter out leaf types
@@ -639,7 +661,7 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                         for disease in disease_instances:
                             solution = get_random_solution(disease, disease_data)
                             if solution:
-                                with st.container():
+                                with st.container():    
                                     st.markdown(
                                         f"""
                                         <div style="margin-left: 0.95em; margin-bottom: 1.5em;">
@@ -649,7 +671,6 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                         """,
                                         unsafe_allow_html=True
                                     )
-
                     else:
                         if any(disease.lower() == "healthy" for disease in detected_diseases):
                             with st.container():
