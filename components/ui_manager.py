@@ -7,6 +7,8 @@ import streamlit_antd_components as sac
 from streamlit_option_menu import option_menu
 from collections import Counter, defaultdict
 from streamlit_extras.stylable_container import stylable_container
+import json
+import random
 
 # Import necessary functions from your modules
 from modules.detection_utils import (
@@ -27,6 +29,32 @@ from modules.gps_utils import (
 from modules.detection_runner import check_image_exists, _upload_image_once
 
 from components.ui.instructions import top_bar, instructions_header, subtitle, step_item, note_banner
+
+# Load disease data from the json file
+def load_disease_data():
+    try:
+        with open('components/dataset/diseases.json', 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        st.error(f"Error loading diseases.json: {e}")
+        return []
+
+# Fix the get_random_solution function to handle partial matches like "rust" matching "Leaf Rust"
+def get_random_solution(disease_name, disease_data):
+    """Get a random solution for a given disease from the disease data."""
+    # First try exact match
+    for disease in disease_data:
+        if disease["title"].lower() == disease_name.lower() or disease["name2"].lower() == disease_name.lower():
+            if disease.get("solution") and len(disease["solution"]) > 0:
+                return random.choice(disease["solution"])
+    
+    # If no exact match, try partial match
+    for disease in disease_data:
+        if disease_name.lower() in disease["title"].lower() or disease_name.lower() in disease["name2"].lower():
+            if disease.get("solution") and len(disease["solution"]) > 0:
+                return random.choice(disease["solution"])
+    
+    return None
 
 def render_instructions(theme, primary_color, secondary_background_color, text_color, default_image_path, batch_mode=False):
     st.markdown(top_bar(), unsafe_allow_html=True)
@@ -86,6 +114,9 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
     # Initialize variables
     selected_idx = 0
     batch_mode = st.session_state.get("batch_mode", False)
+    
+    # Load disease data from json file
+    disease_data = load_disease_data()
     
     # Handle both single and multiple file uploads
     if batch_mode and uploaded_images and len(uploaded_images) > 0:
@@ -464,19 +495,21 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                         only_healthy = len(detected_diseases) == 1 and detected_diseases[0].lower() == "healthy"
                         only_healthy_and_leaves = all(disease.lower() == "healthy" or disease.lower() in leaf_types for disease in detected_diseases)
                         
-                        # Determine if buttons should be disabled based on model type and detections
-                        model_type = current_model_config.get("detection_model_choice", "")
-                        
-                        # Disable buttons if:
-                        # 1. Using Leaf model (only for leaf detection)
-                        # 2. Only leaf types detected (no diseases)
-                        # 3. Only healthy leaves detected
-                        # 4. Only healthy leaves + leaf types detected
-                        buttons_disabled = (
-                            model_type == "Leaf" or  # Leaf model only
+                            # Disable buttons if:
+                            # 1. Using Leaf model (only for leaf detection)
+                            # 2. Only leaf types detected (no diseases)
+                            # For database only:
+                        db_buttons_disabled = (
+                            current_model_config.get("detection_model_choice", "") == "Leaf" or  # Leaf model only
                             only_leaf_types or       # Only leaf types detected
                             only_healthy or          # Only healthy leaves
                             only_healthy_and_leaves  # Only healthy leaves + leaf types
+                        )
+                        
+                        # For Drive, allow healthy leaves but not leaf types
+                        drive_buttons_disabled = (
+                            current_model_config.get("detection_model_choice", "") == "Leaf" or  # Leaf model only
+                            only_leaf_types         # Only leaf types detected
                         )
                         
                         # Add buttons for saving data and uploading to drive
@@ -484,10 +517,10 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                 
                         with col1:
                             # Disable button if already saved or buttons should be disabled
-                            db_button_disabled = st.session_state.saved_to_database or buttons_disabled
+                            db_button_disabled = st.session_state.saved_to_database or db_buttons_disabled
                             
-                            if buttons_disabled and not st.session_state.saved_to_database:
-                                if model_type == "Leaf":
+                            if db_buttons_disabled and not st.session_state.saved_to_database:
+                                if current_model_config.get("detection_model_choice", "") == "Leaf":
                                     st.info("Coffee leaf types are not saved to database", icon=":material/info:")
                                 elif only_leaf_types:
                                     st.info("Coffee leaf types are not saved to database", icon=":material/info:")
@@ -531,17 +564,13 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                     pass
                                     
                             # Disable button if already saved, image exists, or buttons should be disabled
-                            drive_button_disabled = st.session_state.saved_to_drive or image_exists or buttons_disabled
+                            drive_button_disabled = st.session_state.saved_to_drive or image_exists or drive_buttons_disabled
                                     
-                            if buttons_disabled and not st.session_state.saved_to_drive:
-                                if model_type == "Leaf":
+                            if drive_buttons_disabled and not st.session_state.saved_to_drive:
+                                if current_model_config.get("detection_model_choice", "") == "Leaf":
                                     st.info("Coffee leaf types are not saved to Drive", icon=":material/info:")
                                 elif only_leaf_types:
                                     st.info("Coffee leaf types are not saved to Drive", icon=":material/info:")
-                                elif only_healthy:
-                                    st.info("Healthy leaves are not saved to Drive", icon=":material/info:")
-                                elif only_healthy_and_leaves:
-                                    st.info("Healthy and coffee leaf types are not saved to Drive", icon=":material/info:")
                             else:
                                 if st.button("☁️ Save to Drive", 
                                         use_container_width=True,
@@ -553,10 +582,9 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                         if check_image_exists(drive, PARENT_FOLDER_ID, source_img.name):
                                             st.warning("⚠️ This image already exists in Google Drive")
                                         else:
-                                            # Filter out leaf types and healthy leaves when selecting label
+                                            # Filter out leaf types when selecting label, but keep "Healthy"
                                             saveable_diseases = [d for d in detected_diseases 
-                                                                if d.lower() not in leaf_types and 
-                                                                d.lower() != "healthy"]
+                                                                if d.lower() not in leaf_types]
                                             
                                             # Use the first saveable disease as the label, or "Unknown" if none
                                             label = saveable_diseases[0] if saveable_diseases else "Unknown"
@@ -580,34 +608,6 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                     with st.container():
                         st.info("Upload an image to see detailed analysis")
                 else:
-                    # Show image metadata
-                    gps_data = get_gps_location(source_img)
-                    image_date = get_image_taken_time(source_img)
-                    location_name = (
-                        get_location_name(
-                            gps_data["latitude"], gps_data["longitude"]
-                        )
-                        if gps_data
-                        else "Unavailable"
-                    )
-
-                    st.markdown(f"""<div style="margin: 10px 15px 10px 5px; font-size: 20px; font-weight: 600; color: {primary_color}">
-                                Image Metadata
-                                </div>""", unsafe_allow_html=True)
-                    st.write(f"- **Location**: `{location_name}`")
-                    if gps_data:
-                        st.write(
-                            f"- **Latitude**: `{gps_data.get('latitude', 'N/A')}`"
-                        )
-                        st.write(
-                            f"- **Longitude**: `{gps_data.get('longitude', 'N/A')}`"
-                        )
-                    else:
-                        st.write("- **Latitude**: `Unavailable`")
-                        st.write("- **Longitude**: `Unavailable`")
-                    if image_date:
-                        st.write(f"- **Date Taken**: `{image_date}`")
-                            
                     # Show all leaf and disease instances with their individual confidence levels
                     # First, add a dedicated section for leaf types
                     model_type = current_model_config.get("detection_model_choice", "")
@@ -622,8 +622,42 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                 for leaf_type, score in leaf_instances:
                                     st.markdown(f"- **{leaf_type.title()}**: {score:.1f}% confidence")
                         else:
-                            st.info("No leaf type detected in this image")
+                            with st.container():
+                                st.info("No leaf type detected in this image")
                     
+                    # Add a Recommendation section for detected diseases
+                    st.markdown(f"""<div style="margin: 10px 15px 10px 5px; font-size: 20px; font-weight: 600; color: {primary_color}">
+                                Recommendation
+                                </div>""", unsafe_allow_html=True)
+                    
+                    # Get detected diseases and filter out leaf types
+                    detected_diseases = st.session_state.get("detected_diseases", [])
+                    leaf_types = ["arabica", "liberica", "robusta"]
+                    disease_instances = [disease for disease in detected_diseases if disease.lower() not in leaf_types and disease.lower() != "healthy"]
+                    
+                    if disease_instances:
+                        for disease in disease_instances:
+                            solution = get_random_solution(disease, disease_data)
+                            if solution:
+                                with st.container():
+                                    st.markdown(
+                                        f"""
+                                        <div style="margin-left: 0.95em; margin-bottom: 1.5em;">
+                                            <div style="font-weight: 600; font-size: 1em;">• {disease.title()}</div>
+                                            <div style="margin-top: 0.5px; margin-bottom: 1em; font-style: italic; font-size: 0.85rem;">Recommendation: {solution}</div>
+                                        </div>
+                                        """,
+                                        unsafe_allow_html=True
+                                    )
+
+                    else:
+                        if any(disease.lower() == "healthy" for disease in detected_diseases):
+                            with st.container():
+                                st.success("👍 Your coffee leaf appears healthy! No treatment needed.")
+                        else:
+                            with st.container():
+                                st.info("No disease instances requiring recommendations detected in this image")
+                                
                     # Then show the disease instances
                     st.markdown(f"""<div style="margin: 10px 15px 10px 5px; font-size: 20px; font-weight: 600; color: {primary_color}">
                                 All Class Instances
