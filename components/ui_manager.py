@@ -586,12 +586,35 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                             saveable_diseases = [d for d in detected_diseases 
                                                                 if d.lower() not in leaf_types]
                                             
-                                            # Use the first saveable disease as the label, or "Unknown" if none
-                                            label = saveable_diseases[0] if saveable_diseases else "Unknown"
-                                                        
-                                            _upload_image_once(uploaded_image, label, drive, PARENT_FOLDER_ID)
-                                            st.session_state.saved_to_drive = True
-                                            st.success("✅ Image uploaded to Google Drive successfully!")
+                                            if not saveable_diseases:
+                                                st.warning("No saveable diseases detected")
+                                            else:
+                                                # Get all disease instances with their confidence scores
+                                                all_instances = st.session_state.get("all_disease_instances", [])
+                                                
+                                                # Create a dictionary to track highest confidence per disease
+                                                highest_confidence = {}
+                                                
+                                                # Find highest confidence for each unique disease
+                                                for disease, confidence in all_instances:
+                                                    # Skip leaf types
+                                                    if disease.lower() in leaf_types:
+                                                        continue
+                                                    
+                                                    # Update highest confidence for this disease
+                                                    if disease not in highest_confidence or confidence > highest_confidence[disease]:
+                                                        highest_confidence[disease] = confidence
+                                                
+                                                # Save to each disease folder
+                                                success_count = 0
+                                                for disease, confidence in highest_confidence.items():
+                                                    # Create a temporary copy of the image for each upload
+                                                    temp_img = uploaded_image.copy()
+                                                    _upload_image_once(temp_img, disease, drive, PARENT_FOLDER_ID)
+                                                    success_count += 1
+                                                
+                                                st.session_state.saved_to_drive = True
+                                                st.success(f"✅ Image uploaded to {success_count} disease folders in Google Drive!")
                                     except Exception as e:
                                         st.error(f"Error uploading to Drive: {e}")
                                         

@@ -355,7 +355,7 @@ def _upload_image_once(uploaded_image, name, drive, parent_folder_id):
     temp_path = f"temp_{uuid.uuid4().hex}.jpg"
     uploaded_image.save(temp_path)
     try:
-        with st.spinner("Uploading to Google Drive..."):
+        with st.spinner(f"Uploading to Google Drive ({name})..."):
             result = upload_image(temp_path, name, drive, parent_folder_id)
             st.toast(result)
     except Exception as e:
