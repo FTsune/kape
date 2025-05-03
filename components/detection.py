@@ -89,15 +89,6 @@ def main(theme_colors):
         unsafe_allow_html=True,
     )
 
-    # To be removed
-    warn.markdown(
-        f"""<div style='background-color: transparent; border: 1px solid {primary_color}; border-radius: 10px;'>
-                <p style='font-size: 0.9rem; color: {primary_color}; margin: 0px 0px; padding: 10px;'>
-                This feature is still in development and may cause unexpected behavior when used.</p>
-            </div>""",
-        unsafe_allow_html=True,
-    )
-
     # Sidebar model selection
     st.sidebar.header("MODEL CONFIGURATION")
 

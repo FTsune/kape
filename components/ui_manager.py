@@ -541,12 +541,21 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                                                 if d.lower() not in leaf_types and 
                                                                 d.lower() != "healthy"]
                                             
+                                            # Get confidence scores and filter those >= 60%
+                                            high_confidence_diseases = []
                                             for disease in saveable_diseases:
-                                                confidence = disease_confidences.get(disease, 75) # Default to 75 if not found
-                                                save_location_data(source_img, disease, confidence, gps_data)
-                                                    
-                                            st.session_state.saved_to_database = True
-                                            st.success("✅ Data saved successfully to database!")
+                                                confidence = disease_confidences.get(disease, 0)
+                                                if confidence >= 60:
+                                                    high_confidence_diseases.append((disease, confidence))
+                                            
+                                            if not high_confidence_diseases:
+                                                st.warning("Confidence score is too low. Try another image.")
+                                            else:
+                                                for disease, confidence in high_confidence_diseases:
+                                                    save_location_data(source_img, disease, confidence, gps_data)
+                                                        
+                                                st.session_state.saved_to_database = True
+                                                st.success("✅ Data saved successfully to database!")
                                     except Exception as e:
                                         st.error(f"Error saving data: {e}")
                                         
@@ -605,16 +614,22 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                                     if disease not in highest_confidence or confidence > highest_confidence[disease]:
                                                         highest_confidence[disease] = confidence
                                                 
-                                                # Save to each disease folder
-                                                success_count = 0
-                                                for disease, confidence in highest_confidence.items():
-                                                    # Create a temporary copy of the image for each upload
-                                                    temp_img = uploaded_image.copy()
-                                                    _upload_image_once(temp_img, disease, drive, PARENT_FOLDER_ID)
-                                                    success_count += 1
+                                                # Filter diseases with confidence >= 60%
+                                                high_confidence_diseases = {disease: confidence for disease, confidence in highest_confidence.items() if confidence >= 60}
                                                 
-                                                st.session_state.saved_to_drive = True
-                                                st.success(f"✅ Image uploaded to {success_count} disease folders in Google Drive!")
+                                                if not high_confidence_diseases:
+                                                    st.warning("Confidence score is too low. Try another image.")
+                                                else:
+                                                    # Save to each disease folder
+                                                    success_count = 0
+                                                    for disease, confidence in high_confidence_diseases.items():
+                                                        # Create a temporary copy of the image for each upload
+                                                        temp_img = uploaded_image.copy()
+                                                        _upload_image_once(temp_img, disease, drive, PARENT_FOLDER_ID)
+                                                        success_count += 1
+                                                    
+                                                    st.session_state.saved_to_drive = True
+                                                    st.success(f"✅ Image uploaded to {success_count} disease folders in Google Drive!")
                                     except Exception as e:
                                         st.error(f"Error uploading to Drive: {e}")
                                         

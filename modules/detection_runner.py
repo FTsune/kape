@@ -24,12 +24,12 @@ def save_prediction_if_valid(
     saved = False
 
     # Sheets: skip if low confidence or unwanted label
-    if score >= 50 and name.lower() not in SKIP_LABELS:
+    if score >= 60 and name.lower() not in SKIP_LABELS:
         save_location_data(source_img, name, score, gps_data)
         saved = True
 
-    # Drive: upload anything with score >= 50
-    if score >= 50 and save_to_drive and not uploaded_flag:
+    # Drive: upload anything with score >= 60
+    if score >= 60 and save_to_drive and not uploaded_flag:
         _upload_image_once(uploaded_image, name, drive, parent_folder_id)
         uploaded_flag = True
         saved = True
@@ -84,7 +84,7 @@ def detect_and_save_silently(
     if detections:
         best_name, best_score = sorted(detections, key=lambda x: x[1], reverse=True)[0]
 
-        if best_score < 50:
+        if best_score < 60:
             return f"Skipped (low confidence: {best_score}%)", best_score
 
         saved, _ = save_prediction_if_valid(
@@ -456,7 +456,7 @@ def _run_single_model(
     )
 
     for name, score in highest_disease.items():
-        if score > 50:
+        if score >= 60:
             did_save, uploaded = save_prediction_if_valid(
                 name=name,
                 score=score,
@@ -596,7 +596,7 @@ def _run_both_models(
     )
 
     for name, score in highest_disease.items():
-        if score > 50:
+        if score >= 60:
             did_save, uploaded = save_prediction_if_valid(
                 name=name,
                 score=score,

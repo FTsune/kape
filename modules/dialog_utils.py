@@ -14,6 +14,7 @@ def show_disease_dialog():
 def show_leaf_dialog():
     st.markdown("**Helpful Tips:**")
     st.markdown("- **Coffee Leaf**: Make sure the image contains a **coffee** leaf")
+    st.markdown("- **Adjust Confidence Threshold**: Try lowering the threshold in Advanced Options")
     st.markdown("- **Use Clear Images**: Avoid blurry or low quality images")
     st.markdown("- **Center the Leaf**: Ensure the leaf fills the frame")
     st.warning("No leaf types were found. Make sure the image contains a clear leaf.", icon=':material/warning:')
