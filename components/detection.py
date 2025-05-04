@@ -94,7 +94,7 @@ def main(theme_colors):
 
     disease_model_mode = st.sidebar.selectbox(
         "Disease Model Type:",
-        ["Spots + Full Leaf", "YOLOv11m - Full Leaf"],
+        ["YOLOv11l - Spots Detection", "YOLOv11m - Full Leaf Detection"],
         index=1,
         key="disease_model_mode",
     )
@@ -107,9 +107,13 @@ def main(theme_colors):
     confidence = 0.6
     overlap_threshold = 0.3
     if adv_opt:
-        confidence = float(st.sidebar.slider("Model Confidence", 25, 100, 60)) / 100
+        confidence = float(st.sidebar.slider("Model Confidence", 25, 100, 60,
+                                             help="Set the minimum confidence score for displaying detections. Higher values show only more certain predictions; lower values allow more detections, including less confident ones."
+                                             )) / 100
         overlap_threshold = (
-            float(st.sidebar.slider("Overlap Threshold", 0, 100, 30)) / 100
+            float(st.sidebar.slider("Overlap Threshold", 0, 100, 30, help=
+                                    "Adjust the overlap threshold (IoU) to control how much bounding boxes must overlap to be considered the same object. Lower values merge more boxes; higher values require stricter overlap."
+                                    )) / 100
         )
         st.sidebar.markdown(
             """

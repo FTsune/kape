@@ -87,9 +87,8 @@ def run_detection(source_img, current_model_config, progress_callback=None):
             0: (255, 255, 0), # Yellow for Abiotic Disorder
             1: (255, 0, 0), # Red for Cercospora
             2: (0, 204, 0), # Green for Healthy
-            3: (128, 0, 128), # Purple for Late Stage Rust
-            4: (255, 165, 0), # Orange for Rust
-            5: (128, 128, 128), # Grey for Sooty Mold
+            3: (255, 165, 0), # Orange for Rust
+            4: (0, 0, 0), # Black for Sooty Mold
         },
         cleaf_colors={0: (0, 255, 0), 1: (0, 255, 255), 2: (0, 0, 255)}
     )
@@ -142,12 +141,8 @@ def load_models(detection_model_choice, disease_model_mode):
                 Path(settings.DISEASE_MODEL_YOLO11M)
             )
         else:
-            model = (
-                helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
-                helper.load_model(
-                    Path(settings.DISEASE_MODEL_FULL_LEAF)
-                ),
-            )
+            # Modified to use only spots.pt model instead of a tuple
+            model = helper.load_model(Path(settings.DISEASE_MODEL_SPOTS))
         model_leaf = model_disease = None
 
     elif detection_model_choice == "Leaf":
@@ -162,12 +157,8 @@ def load_models(detection_model_choice, disease_model_mode):
                 Path(settings.DISEASE_MODEL_YOLO11M)
             )
         else:
-            model_disease = (
-                helper.load_model(Path(settings.DISEASE_MODEL_SPOTS)),
-                helper.load_model(
-                    Path(settings.DISEASE_MODEL_FULL_LEAF)
-                ),
-            )
+            # Modified to use only spots.pt model instead of a tuple
+            model_disease = helper.load_model(Path(settings.DISEASE_MODEL_SPOTS))
         model_leaf = helper.load_model(Path(settings.LEAF_MODEL))
         model = None
         

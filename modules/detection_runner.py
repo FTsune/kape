@@ -71,15 +71,8 @@ def detect_and_save_silently(
 
     if model_type in ["Disease", "Both Models"]:
         used_model = model if model_type == "Disease" else model_disease
-
-        if isinstance(used_model, tuple):
-            res1 = used_model[0].predict(uploaded_image, conf=confidence)
-            detections += process_boxes(res1, res1[0].names)
-            res2 = used_model[1].predict(uploaded_image, conf=confidence)
-            detections += process_boxes(res2, res2[0].names)
-        else:
-            res = used_model.predict(uploaded_image, conf=confidence)
-            detections += process_boxes(res, res[0].names)
+        res = used_model.predict(uploaded_image, conf=confidence)
+        detections += process_boxes(res, res[0].names)
 
     if detections:
         best_name, best_score = sorted(detections, key=lambda x: x[1], reverse=True)[0]
@@ -117,7 +110,7 @@ def get_highest_confidence_detections(results):
 def generate_preview_image(
     uploaded_image,
     model_type,
-    model,  # In Disease mode, this is the disease tuple
+    model,  # In Disease mode, this is the disease model
     model_leaf,
     model_disease,  # Used only in Both Models mode
     confidence,
@@ -143,37 +136,13 @@ def generate_preview_image(
 
     try:
         if model_type == "Disease":
-            # Check if 'model' (the disease model input) is a tuple
-            if isinstance(model, tuple):
-                result_image = np.array(uploaded_image)
-
-                # Process first disease model (use original labels for image drawing)
-                result1 = model[0].predict(uploaded_image, conf=confidence)
-                boxes1 = non_max_suppression(result1[0].boxes, overlap_threshold)
-                labels1 = result1[
-                    0
-                ].names  # remain as predicted (e.g. "late-stage-rust")
-                result_image = draw_bounding_boxes(
-                    result_image, boxes1, labels1, cdisease_colors, normalize_label=normalize_label
-                )
-
-                # Process second disease model
-                result2 = model[1].predict(uploaded_image, conf=confidence)
-                boxes2 = non_max_suppression(result2[0].boxes, overlap_threshold)
-                labels2 = result2[0].names
-                result_image = draw_bounding_boxes(
-                    result_image, boxes2, labels2, cdisease_colors, normalize_label=normalize_label
-                )
-
-                return result_image
-            else:
-                # Single disease model
-                result = model.predict(uploaded_image, conf=confidence)
-                boxes = non_max_suppression(result[0].boxes, overlap_threshold)
-                labels = result[0].names
-                return draw_bounding_boxes(
-                    uploaded_image, boxes, labels, cdisease_colors, normalize_label=normalize_label
-                )
+            # Process disease model
+            result = model.predict(uploaded_image, conf=confidence)
+            boxes = non_max_suppression(result[0].boxes, overlap_threshold)
+            labels = result[0].names
+            return draw_bounding_boxes(
+                uploaded_image, boxes, labels, cdisease_colors, normalize_label=normalize_label
+            )
 
         elif model_type == "Leaf":
             # Ensure model is not None
@@ -191,39 +160,14 @@ def generate_preview_image(
             result_image = np.array(uploaded_image)
 
             # Process disease detections using model_disease (passed separately in Both Models mode)
-            if isinstance(model_disease, tuple):
-                result_disease1 = model_disease[0].predict(
-                    uploaded_image, conf=confidence
-                )
-                boxes_disease1 = non_max_suppression(
-                    result_disease1[0].boxes, overlap_threshold
-                )
-                labels_disease1 = result_disease1[
-                    0
-                ].names  # original labels used for drawing
-                result_image = draw_bounding_boxes(
-                    result_image, boxes_disease1, labels_disease1, cdisease_colors, normalize_label=normalize_label
-                )
-
-                result_disease2 = model_disease[1].predict(
-                    uploaded_image, conf=confidence
-                )
-                boxes_disease2 = non_max_suppression(
-                    result_disease2[0].boxes, overlap_threshold
-                )
-                labels_disease2 = result_disease2[0].names
-                result_image = draw_bounding_boxes(
-                    result_image, boxes_disease2, labels_disease2, cdisease_colors, normalize_label=normalize_label
-                )
-            else:
-                result_disease = model_disease.predict(uploaded_image, conf=confidence)
-                boxes_disease = non_max_suppression(
-                    result_disease[0].boxes, overlap_threshold
-                )
-                labels_disease = result_disease[0].names
-                result_image = draw_bounding_boxes(
-                    result_image, boxes_disease, labels_disease, cdisease_colors, normalize_label=normalize_label
-                )
+            result_disease = model_disease.predict(uploaded_image, conf=confidence)
+            boxes_disease = non_max_suppression(
+                result_disease[0].boxes, overlap_threshold
+            )
+            labels_disease = result_disease[0].names
+            result_image = draw_bounding_boxes(
+                result_image, boxes_disease, labels_disease, cdisease_colors, normalize_label=normalize_label
+            )
 
             # Process leaf detections (drawn with original label)
             if model_leaf is not None:
@@ -260,24 +204,12 @@ def detect_labels_only(
         return [normalize_label(labels[int(box.cls[0])]) for box in boxes]
 
     if model_type == "Disease":
-        if isinstance(model, tuple):
-            res1 = model[0].predict(uploaded_image, conf=confidence)
-            detections += process_boxes(res1, res1[0].names)
-            res2 = model[1].predict(uploaded_image, conf=confidence)
-            detections += process_boxes(res2, res2[0].names)
-        else:
-            res = model.predict(uploaded_image, conf=confidence)
-            detections += process_boxes(res, res[0].names)
+        res = model.predict(uploaded_image, conf=confidence)
+        detections += process_boxes(res, res[0].names)
 
     elif model_type == "Both Models":
-        if isinstance(model_disease, tuple):
-            res1 = model_disease[0].predict(uploaded_image, conf=confidence)
-            detections += process_boxes(res1, res1[0].names)
-            res2 = model_disease[1].predict(uploaded_image, conf=confidence)
-            detections += process_boxes(res2, res2[0].names)
-        else:
-            res = model_disease.predict(uploaded_image, conf=confidence)
-            detections += process_boxes(res, res[0].names)
+        res = model_disease.predict(uploaded_image, conf=confidence)
+        detections += process_boxes(res, res[0].names)
 
     return detections
     
@@ -309,18 +241,8 @@ def detect_with_confidence(
     # Process disease detections
     if model_type in ["Disease", "Both Models"]:
         used_model = model if model_type == "Disease" else model_disease
-
-        if isinstance(used_model, tuple):
-            # For tuple models (like Spots + Full Leaf), process both models
-            res1 = used_model[0].predict(uploaded_image, conf=confidence)
-            detections.extend(process_boxes(res1, res1[0].names))
-            
-            res2 = used_model[1].predict(uploaded_image, conf=confidence)
-            detections.extend(process_boxes(res2, res2[0].names))
-        else:
-            # For single models
-            res = used_model.predict(uploaded_image, conf=confidence)
-            detections.extend(process_boxes(res, res[0].names))
+        res = used_model.predict(uploaded_image, conf=confidence)
+        detections.extend(process_boxes(res, res[0].names))
     
     # Process leaf detections if using Leaf or Both Models
     if model_type in ["Leaf", "Both Models"]:
@@ -377,66 +299,30 @@ def _run_single_model(
     parent_folder_id,
     colors,
 ):
-    # For Disease type with multiple models
-    if model_type == "Disease" and isinstance(model, tuple):
-        # Create a copy of the uploaded image for drawing (drawing uses original labels)
-        result_image = np.array(uploaded_image)
-        disease_results = []
+    # Standard single model approach (Disease or Leaf)
+    res = model.predict(uploaded_image, conf=confidence)
+    boxes = non_max_suppression(res[0].boxes, overlap_threshold)
+    labels = res[0].names
 
-        # Run the first disease model
-        res1 = model[0].predict(uploaded_image, conf=confidence)
-        boxes1 = non_max_suppression(res1[0].boxes, overlap_threshold)
-        labels1 = res1[0].names  # original labels for image preview
-        result_image = draw_bounding_boxes(result_image, boxes1, labels1, colors)
+    result_image = draw_bounding_boxes(uploaded_image, boxes, labels, colors)
 
-        # Collect predictions from first model (use normalized label for saving)
-        for box in boxes1:
-            class_id = int(box.cls[0])
-            score = round(float(box.conf[0]) * 100, 1)
-            raw_name = labels1[class_id]
-            name = normalize_label(raw_name)  # normalized to "rust" if necessary
+    disease_results = []
+    leaf_results = []
+
+    # Collect predictions (use normalized labels for saving)
+    for box in boxes:
+        class_id = int(box.cls[0])
+        score = round(float(box.conf[0]) * 100, 1)
+        raw_name = labels[class_id]
+        name = normalize_label(raw_name)
+        if model_type == "Leaf" and name.lower() in [
+            "arabica",
+            "liberica",
+            "robusta",
+        ]:
+            leaf_results.append((name, score))
+        else:
             disease_results.append((name, score))
-
-        # Run the second disease model
-        res2 = model[1].predict(uploaded_image, conf=confidence)
-        boxes2 = non_max_suppression(res2[0].boxes, overlap_threshold)
-        labels2 = res2[0].names
-        result_image = draw_bounding_boxes(result_image, boxes2, labels2, colors)
-
-        # Collect predictions from second model
-        for box in boxes2:
-            class_id = int(box.cls[0])
-            score = round(float(box.conf[0]) * 100, 1)
-            raw_name = labels2[class_id]
-            name = normalize_label(raw_name)
-            disease_results.append((name, score))
-
-        leaf_results = []  # For Disease mode, only disease results are used
-    else:
-        # Standard single model approach (Leaf or single Disease model)
-        res = model.predict(uploaded_image, conf=confidence)
-        boxes = non_max_suppression(res[0].boxes, overlap_threshold)
-        labels = res[0].names
-
-        result_image = draw_bounding_boxes(uploaded_image, boxes, labels, colors)
-
-        disease_results = []
-        leaf_results = []
-
-        # Collect predictions (use normalized labels for saving)
-        for box in boxes:
-            class_id = int(box.cls[0])
-            score = round(float(box.conf[0]) * 100, 1)
-            raw_name = labels[class_id]
-            name = normalize_label(raw_name)
-            if model_type == "Leaf" and name.lower() in [
-                "arabica",
-                "liberica",
-                "robusta",
-            ]:
-                leaf_results.append((name, score))
-            else:
-                disease_results.append((name, score))
 
     # Display the processed image (which still shows original labels)
     with st.container(border=True):
@@ -517,51 +403,19 @@ def _run_both_models(
     result_image = np.array(uploaded_image)
     disease_results = []
 
-    # --- Disease detection ---
-    if isinstance(model_disease, tuple):
-        # Process first disease model
-        res_disease1 = model_disease[0].predict(uploaded_image, conf=confidence)
-        boxes_disease1 = non_max_suppression(res_disease1[0].boxes, overlap_threshold)
-        labels_disease1 = res_disease1[0].names
-        result_image = draw_bounding_boxes(
-            result_image, boxes_disease1, labels_disease1, cdisease_colors
-        )
-        # Collect predictions using normalized labels for saving
-        for box in boxes_disease1:
-            class_id = int(box.cls[0])
-            score = round(float(box.conf[0]) * 100, 1)
-            raw_name = labels_disease1[class_id]
-            name = normalize_label(raw_name)
-            disease_results.append((name, score))
-
-        # Process second disease model
-        res_disease2 = model_disease[1].predict(uploaded_image, conf=confidence)
-        boxes_disease2 = non_max_suppression(res_disease2[0].boxes, overlap_threshold)
-        labels_disease2 = res_disease2[0].names
-        result_image = draw_bounding_boxes(
-            result_image, boxes_disease2, labels_disease2, cdisease_colors
-        )
-        # Collect predictions
-        for box in boxes_disease2:
-            class_id = int(box.cls[0])
-            score = round(float(box.conf[0]) * 100, 1)
-            raw_name = labels_disease2[class_id]
-            name = normalize_label(raw_name)
-            disease_results.append((name, score))
-    else:
-        # Single disease model
-        res_disease = model_disease.predict(uploaded_image, conf=confidence)
-        disease_boxes = non_max_suppression(res_disease[0].boxes, overlap_threshold)
-        disease_labels = res_disease[0].names
-        result_image = draw_bounding_boxes(
-            result_image, disease_boxes, disease_labels, cdisease_colors
-        )
-        for box in disease_boxes:
-            class_id = int(box.cls[0])
-            score = round(float(box.conf[0]) * 100, 1)
-            raw_name = disease_labels[class_id]
-            name = normalize_label(raw_name)
-            disease_results.append((name, score))
+    # --- Disease detection with single model ---
+    res_disease = model_disease.predict(uploaded_image, conf=confidence)
+    disease_boxes = non_max_suppression(res_disease[0].boxes, overlap_threshold)
+    disease_labels = res_disease[0].names
+    result_image = draw_bounding_boxes(
+        result_image, disease_boxes, disease_labels, cdisease_colors
+    )
+    for box in disease_boxes:
+        class_id = int(box.cls[0])
+        score = round(float(box.conf[0]) * 100, 1)
+        raw_name = disease_labels[class_id]
+        name = normalize_label(raw_name)
+        disease_results.append((name, score))
 
     # --- Leaf detection ---
     res_leaf = model_leaf.predict(uploaded_image, conf=confidence)
@@ -642,30 +496,12 @@ def predict_for_display_only(
     uploaded_image, model, confidence, overlap_threshold, colors
 ):
     """Run a dry prediction just to show image with bounding boxes."""
-    # Handle multiple models for disease preview
-    if isinstance(model, tuple):
-        result_image = np.array(uploaded_image)
-
-        # Process first model
-        res1 = model[0].predict(uploaded_image, conf=confidence)
-        boxes1 = non_max_suppression(res1[0].boxes, overlap_threshold)
-        labels1 = res1[0].names
-        result_image = draw_bounding_boxes(result_image, boxes1, labels1, colors)
-
-        # Process second model
-        res2 = model[1].predict(uploaded_image, conf=confidence)
-        boxes2 = non_max_suppression(res2[0].boxes, overlap_threshold)
-        labels2 = res2[0].names
-        result_image = draw_bounding_boxes(result_image, boxes2, labels2, colors)
-
-        return result_image
-    else:
-        # Standard single model approach
-        res = model.predict(uploaded_image, conf=confidence)
-        boxes = non_max_suppression(res[0].boxes, overlap_threshold)
-        labels = res[0].names
-        result_image = draw_bounding_boxes(uploaded_image, boxes, labels, colors)
-        return result_image
+    # Standard single model approach
+    res = model.predict(uploaded_image, conf=confidence)
+    boxes = non_max_suppression(res[0].boxes, overlap_threshold)
+    labels = res[0].names
+    result_image = draw_bounding_boxes(uploaded_image, boxes, labels, colors)
+    return result_image
 
 
 def handle_detection(
@@ -701,12 +537,12 @@ def handle_detection(
             cdisease_colors,
         )
     elif model_type == "Disease":
-        # Run just the disease models (loaded as a tuple)
+        # Run just the disease model
         results = _run_single_model(
             uploaded_image,
             source_img,
             gps_data,
-            model,  # This should be the disease model tuple
+            model,  # This should be the disease model
             model_type,
             confidence,
             overlap_threshold,

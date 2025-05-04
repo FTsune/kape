@@ -679,9 +679,9 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                     with st.container():
                         if date_taken or location_name:
                             if date_taken:
-                                st.markdown(f"📍 **Date Taken**: {date_taken.strftime('%B %d, %Y')}")
+                                st.markdown(f"📅 **Date Taken**: {date_taken.strftime('%B %d, %Y')}")
                             if location_name:
-                                st.markdown(f"📅 **Location**: {location_name}")
+                                st.markdown(f"📍 **Location**: {location_name}")
                         else:
                             st.info("No metadata available for this image")
                     

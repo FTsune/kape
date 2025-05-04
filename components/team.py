@@ -100,23 +100,19 @@ def main(theme_colors):
         <div class="grid-container">
             <div class="grid-item">
                 <img src="./app/static/images/team/nico.png">
-                <p class="title">NICO</p>
-                <p class="subtitle">Deep Learning Engineer</p>
+                <p class="title">NICKO</p>
             </div>
             <div class="grid-item">
                 <img src="./app/static/images/team/kurt.jpg">
                 <p class="title">KURT</p>
-                <p class="subtitle">Full Stack Developer</p>
             </div>
             <div class="grid-item">
                 <img src="./app/static/images/team/franco.png">
                 <p class="title">FRANCO</p>
-                <p class="subtitle">Full Stack Developer</p>
             </div>
             <div class="grid-item">
                 <img src="./app/static/images/team/marvin.png">
                 <p class="title">MARVIN</p>
-                <p class="subtitle">Data Cleaner</p>
             </div>
         </div>
     </div>

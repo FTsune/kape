@@ -25,10 +25,10 @@ DEFAULT_DETECT_IMAGE = IMAGES_DIR / "DB.jpg"
 # ML Model config
 MODEL_DIR = ROOT / "../../weights"
 
-DISEASE_MODEL_SPOTS = MODEL_DIR / "spots.pt"  # old name: DISEASE_DETECTION_MODEL
+DISEASE_MODEL_SPOTS = MODEL_DIR / "yolo11l-spots.pt" 
 DISEASE_MODEL_FULL_LEAF = (
     MODEL_DIR / "full_leaf(1).pt"
-)  # old name: NEW_DISEASE_DETECTION_MODEL
-DISEASE_MODEL_YOLO11M = MODEL_DIR / "yolo11m96.pt"  # unified disease model
+)
+DISEASE_MODEL_YOLO11M = MODEL_DIR / "yolo11m96.pt" 
 
 LEAF_MODEL = MODEL_DIR / "cleaf.pt"  # unchanged
