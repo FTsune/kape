@@ -65,7 +65,7 @@ def render_instructions(theme, primary_color, secondary_background_color, text_c
         "Configure the model settings in the sidebar",
         "Upload a valid image file (jpeg, jpg, webp, png)",
         "Avoid bluriness and make sure the leaf is the main focus of the image",
-        "The system will detect diseases based on your configuration",
+        "For better results, avoid wide shot angles",
         "Results will display detected diseases and confidence scores"
     ]
     

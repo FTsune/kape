@@ -97,6 +97,7 @@ def main(theme_colors):
         ["YOLOv11l - Spots Detection", "YOLOv11m - Full Leaf Detection"],
         index=1,
         key="disease_model_mode",
+        disabled=True
     )
 
     detection_model_choice = st.sidebar.selectbox(

@@ -7,7 +7,6 @@ def show_disease_dialog():
     st.markdown("- **Adjust Confidence Threshold**: Try lowering the threshold in Advanced Options")
     st.markdown("- **Ensure Proper Lighting**: Make sure the leaf is well-lit in the image")
     st.markdown("- **Center the Subject**: Position the leaf in the center of the frame")
-    st.markdown("- **Change Disease Model**: If issue still persists, try changing the disease model")
     st.warning("Make sure to read the instructions carefully.", icon=':material/warning:')
 
 @st.dialog("No Leaf Types Detected")
