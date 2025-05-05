@@ -190,7 +190,7 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                     image_placeholder.image(
                         uploaded_image,
                         caption="Original Image",
-                        use_column_width=True,
+                        use_container_width=True,
                     )
 
         # Handle detection in col2
@@ -214,7 +214,7 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                         col2_placeholder.image(
                             cached_data["result_image"],
                             caption="Detected Image",
-                            use_column_width=True,
+                            use_container_width=True,
                         )
                         
                         # Restore all the detection results from cache
@@ -244,7 +244,7 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                             col2_placeholder.image(
                                 st.session_state["last_result_image"],
                                 caption="Detected Image (Previous Configuration)",
-                                use_column_width=True,
+                                use_container_width=True,
                             )
                         else:
                             # Generate and display detection image if not already done
@@ -252,7 +252,7 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                 col2_placeholder.image(
                                     st.session_state["last_result_image"],
                                     caption="Detected Image",
-                                    use_column_width=True,
+                                    use_container_width=True,
                                 )
                             else:
                                 # Show spinner while detection is in progress
@@ -312,7 +312,7 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                             col2_placeholder.image(
                                                 preview_image,
                                                 caption="Detected Image",
-                                                use_column_width=True,
+                                                use_container_width=True,
                                             )
                                         else:
                                             st.error("Detection failed. Please try again.")
@@ -349,7 +349,7 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                     st.rerun()  # Rerun to load the new image
 
         # Display detection results
-        st.markdown(f"""<h3 style='background-color: {primary_color}10; margin-right: 30px; border-radius: 10px 10px 0px 0px; 
+        st.markdown(f"""<h3 style='background-color: {primary_color}10; border-radius: 10px 10px 0px 0px; 
                     border: 1px solid {primary_color}; padding: 15px; border-bottom: 1px solid {primary_color};
                     font-weight: 600; font-size: 1.2rem; color: {primary_color}'>
                     Detection Results</h3>""", unsafe_allow_html=True)
@@ -460,7 +460,7 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                             count = disease_counter[disease]
                             if count > 1:
                                 st.markdown(f"""
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 10px; margin-right: 30px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 10px;">
                                     <div>
                                         <div style="display: flex; align-items: center;">
                                             <span style="margin-right: 10px;">•</span>
@@ -473,7 +473,7 @@ def render_results(theme, primary_color, secondary_background_color, text_color,
                                 """, unsafe_allow_html=True)
                             else:
                                 st.markdown(f"""
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 10px 15px; margin-right: 30px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 10px 15px;">
                                     <div style="display: flex; align-items: center;">
                                         <span style="margin-right: 10px;">•</span>
                                         <span style="font-weight: 600; font-size: 16px;">{disease.title()}</span>

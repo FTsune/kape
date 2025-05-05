@@ -121,7 +121,7 @@ def main():
         cols = st.columns(2)
         with cols[0]:
             with st.container(border=True):
-                st.image(image, use_column_width=True)
+                st.image(image, use_container_width=True)
         with cols[1]:
             st.subheader(f':green[{name}]')
             st.markdown(f"<p style='color: gray; margin-top: -15px; font-weight: italic;'><em>{sci_name}</em></p>", unsafe_allow_html=True)

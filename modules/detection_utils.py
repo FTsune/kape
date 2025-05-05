@@ -136,9 +136,9 @@ def load_models(detection_model_choice, disease_model_mode):
     model = model_leaf = model_disease = None
 
     if detection_model_choice == "Disease":
-        if disease_model_mode == "YOLOv11m - Full Leaf":
+        if disease_model_mode == "Ensemble":
             model = helper.load_model(
-                Path(settings.DISEASE_MODEL_YOLO11M)
+                Path(settings.DISEASE_MODEL_YOLO12M)
             )
         else:
             # Modified to use only spots.pt model instead of a tuple
@@ -152,9 +152,9 @@ def load_models(detection_model_choice, disease_model_mode):
         model_disease = None
 
     elif detection_model_choice == "Both Models":
-        if disease_model_mode == "YOLOv11m - Full Leaf":
+        if disease_model_mode == "Ensemble":
             model_disease = helper.load_model(
-                Path(settings.DISEASE_MODEL_YOLO11M)
+                Path(settings.DISEASE_MODEL_YOLO12M)
             )
         else:
             # Modified to use only spots.pt model instead of a tuple
