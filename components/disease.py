@@ -148,7 +148,7 @@ def main():
     """, unsafe_allow_html=True)
     
     # Header
-    st.markdown(f"<h1 style='color: {primary_color}; text-align: center; padding: 0;'>DISEASES</h1>", unsafe_allow_html=True)
+    st.markdown(f"<h1 style='color: {primary_color}; text-align: center; padding-left: 28px;'>DISEASES</h1>", unsafe_allow_html=True)
     # Center-aligned introduction text
     st.markdown(f"""
         <div style= "margin: auto;" class="intro-text">
