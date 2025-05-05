@@ -94,10 +94,9 @@ def main(theme_colors):
 
     disease_model_mode = st.sidebar.selectbox(
         "Disease Model Type:",
-        ["Ensemble", "YOLOv11l - Spots Detection"],
+        ["Ensemble", "YOLO11 - Precised Spots Detection"],
         index=0,
         key="disease_model_mode",
-        disabled=True
     )
 
     detection_model_choice = st.sidebar.selectbox(
