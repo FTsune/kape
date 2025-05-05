@@ -26,9 +26,7 @@ DEFAULT_DETECT_IMAGE = IMAGES_DIR / "DB.jpg"
 MODEL_DIR = ROOT / "../../weights"
 
 DISEASE_MODEL_SPOTS = MODEL_DIR / "yolo11l-spots.pt" 
-DISEASE_MODEL_FULL_LEAF = (
-    MODEL_DIR / "full_leaf(1).pt"
-)
+DISEASE_LIGHTWEIGHT_MODEL = MODEL_DIR / "yolo12n.pt"
 DISEASE_MODEL_YOLO12M = MODEL_DIR / "yolo11m96.pt" 
 
 LEAF_MODEL = MODEL_DIR / "cleaf.pt"  # unchanged

@@ -140,6 +140,10 @@ def load_models(detection_model_choice, disease_model_mode):
             model = helper.load_model(
                 Path(settings.DISEASE_MODEL_YOLO12M)
             )
+        elif disease_model_mode == "YOLO12n - Lightweight Model":
+            model = helper.load_model(
+                Path(settings.DISEASE_LIGHTWEIGHT_MODEL)
+            )
         else:
             # Modified to use only spots.pt model instead of a tuple
             model = helper.load_model(Path(settings.DISEASE_MODEL_SPOTS))
@@ -155,6 +159,10 @@ def load_models(detection_model_choice, disease_model_mode):
         if disease_model_mode == "Ensemble":
             model_disease = helper.load_model(
                 Path(settings.DISEASE_MODEL_YOLO12M)
+            )
+        elif disease_model_mode == "YOLO12n - Lightweight Model":
+            model = helper.load_model(
+                Path(settings.DISEASE_LIGHTWEIGHT_MODEL)
             )
         else:
             # Modified to use only spots.pt model instead of a tuple
