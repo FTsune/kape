@@ -26,6 +26,40 @@ THEME_COLORS = {
     },
 }
 
+st.markdown(
+    f"""
+    <style>
+    [data-testid="stSidebar"] {{
+        background-color: var(--secondary-background-color);
+    }}
+
+    [data-testid="stSidebar"] > div:first-child {{
+        padding: 16px 15px;
+    }}
+
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] h4 {{
+        margin-top: 6px !important;
+        margin-bottom: 4px !important;
+    }}
+
+    [data-testid="stSidebar"] .stSelectbox {{
+        margin-top: 4px !important;
+        margin-bottom: 6px !important;
+    }}
+
+    [data-testid="stSidebar"] hr {{
+        margin-top: 8px !important;
+        margin-bottom: 8px !important;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
 # Initialize session state for theme if not already set
 if "dark_theme" not in st.session_state:
     st.session_state.dark_theme = False
@@ -65,7 +99,7 @@ st.markdown(
 )
 
 # Display the logo using st.image
-st.logo(current_theme["logo"], size="large", icon_image='static/images/icon.png')
+st.logo(current_theme["logo"], size="large", icon_image="static/images/icon.png")
 
 # Dynamic styles for option menu
 menu_styles = {
