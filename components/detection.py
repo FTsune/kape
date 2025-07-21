@@ -77,14 +77,22 @@ def main(theme_colors):
             background-color: {background_color};
             color: {text_color};
         }}
+
         .stSelectbox, .stSelectbox > div > div > div {{
             background-color: {secondary_background_color};
             color: {text_color};
         }}
+
+        /* Default (desktop) sidebar padding */
         section[data-testid="stSidebar"] > div:first-child {{
-        padding-top: 70px;
-        padding-left: 80px;
-        padding-right: 5px;
+            padding: 70px 20px 20px 70px; /* top, right, bottom, left */
+        }}
+
+        /* Responsive sidebar padding for smaller screens */
+        @media (max-width: 768px) {{
+            section[data-testid="stSidebar"] > div:first-child {{
+                padding: 16px 12px;
+            }}
         }}
         </style>
         """,
